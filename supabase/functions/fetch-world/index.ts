@@ -62,7 +62,7 @@ Deno.serve(async (req) => {
       .map(s => ({ ...s, url: urlOverrides[s.name] ?? s.url }));
 
     // Step 1: Fetch RSS feeds (sequential)
-    const articles = await fetchAllRSS(activeSources, supabase);
+    const articles = (await fetchAllRSS(activeSources, supabase)).slice(0, 10);
 
     // Step 2: Extract fingerprints
     for (const article of articles) {
@@ -124,44 +124,44 @@ Deno.serve(async (req) => {
       // Step 6: Stock ticker matching
       const stockTickers = stockWatchlist
         ? await matchStockTickers(
-            article.title,
-            aiResult.summary ?? '',
-            stockWatchlist,
-          )
+          article.title,
+          aiResult.summary ?? '',
+          stockWatchlist,
+        )
         : [];
 
       // Step 7: Watchlist matching
       const watchlistMatches = watchlistItems
         ? await matchWatchlistItems(
-            article.title,
-            aiResult.summary ?? '',
-            watchlistItems,
-            supabase,
-            prefsWithPrompts?.custom_watchlist_prompt,
-          )
+          article.title,
+          aiResult.summary ?? '',
+          watchlistItems,
+          supabase,
+          prefsWithPrompts?.custom_watchlist_prompt,
+        )
         : [];
 
       // Step 8: Insert article
       const { error } = await supabase.from('articles').insert({
-        title:               aiResult.final_headline ?? article.title,
-        original_title:      article.title,
-        summary:             aiResult.summary,
-        full_content:        aiResult.full_content_cleaned,
-        full_url:            article.link,
-        source_name:         article.source,
-        source_priority:     activeSources.find(s => s.name === article.source)?.priority ?? 5,
-        category:            article.category,
-        topic_tags:          aiResult.topic_tags,
-        published_at:        article.pubDate,
-        story_fingerprint:   (article as Record<string, unknown>).fingerprint as string | null,
-        source_count:        1,
-        is_cluster_primary:  true,
-        has_update:          false,
-        content_fetched:     fullText !== null,
-        clickbait_score:     aiResult.clickbait_score,
-        is_null_article:     false,
-        watchlist_matches:   watchlistMatches.length > 0 ? watchlistMatches : null,
-        stock_tickers:       stockTickers.length > 0 ? stockTickers : null,
+        title: aiResult.final_headline ?? article.title,
+        original_title: article.title,
+        summary: aiResult.summary,
+        full_content: aiResult.full_content_cleaned,
+        full_url: article.link,
+        source_name: article.source,
+        source_priority: activeSources.find(s => s.name === article.source)?.priority ?? 5,
+        category: article.category,
+        topic_tags: aiResult.topic_tags,
+        published_at: article.pubDate,
+        story_fingerprint: (article as Record<string, unknown>).fingerprint as string | null,
+        source_count: 1,
+        is_cluster_primary: true,
+        has_update: false,
+        content_fetched: fullText !== null,
+        clickbait_score: aiResult.clickbait_score,
+        is_null_article: false,
+        watchlist_matches: watchlistMatches.length > 0 ? watchlistMatches : null,
+        stock_tickers: stockTickers.length > 0 ? stockTickers : null,
       });
 
       if (!error) inserted++;

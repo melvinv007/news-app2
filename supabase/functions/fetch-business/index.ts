@@ -40,7 +40,7 @@ Deno.serve(async (req) => {
       .filter(s => !disabledSources.includes(s.name))
       .map(s => ({ ...s, url: urlOverrides[s.name] ?? s.url }));
 
-    const articles = await fetchAllRSS(activeSources, supabase);
+    const articles = (await fetchAllRSS(activeSources, supabase)).slice(0, 10);
 
     for (const article of articles) {
       (article as Record<string, unknown>).fingerprint = await extractFingerprint(
@@ -87,24 +87,24 @@ Deno.serve(async (req) => {
         : [];
 
       const { error } = await supabase.from('articles').insert({
-        title:             aiResult.final_headline ?? article.title,
-        original_title:    article.title,
-        summary:           aiResult.summary,
-        full_content:      aiResult.full_content_cleaned,
-        full_url:          article.link,
-        source_name:       article.source,
-        source_priority:   activeSources.find(s => s.name === article.source)?.priority ?? 5,
-        category:          article.category,
-        topic_tags:        aiResult.topic_tags,
-        published_at:      article.pubDate,
+        title: aiResult.final_headline ?? article.title,
+        original_title: article.title,
+        summary: aiResult.summary,
+        full_content: aiResult.full_content_cleaned,
+        full_url: article.link,
+        source_name: article.source,
+        source_priority: activeSources.find(s => s.name === article.source)?.priority ?? 5,
+        category: article.category,
+        topic_tags: aiResult.topic_tags,
+        published_at: article.pubDate,
         story_fingerprint: (article as Record<string, unknown>).fingerprint as string | null,
-        source_count:      1,
-        is_cluster_primary:true,
-        has_update:        false,
-        content_fetched:   fullText !== null,
-        clickbait_score:   aiResult.clickbait_score,
-        is_null_article:   false,
-        stock_tickers:     stockTickers.length > 0 ? stockTickers : null,
+        source_count: 1,
+        is_cluster_primary: true,
+        has_update: false,
+        content_fetched: fullText !== null,
+        clickbait_score: aiResult.clickbait_score,
+        is_null_article: false,
+        stock_tickers: stockTickers.length > 0 ? stockTickers : null,
       });
 
       if (!error) inserted++;

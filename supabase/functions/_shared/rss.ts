@@ -18,23 +18,28 @@ export type RSSItem = {
   enclosure?: { url: string };
 };
 
-const parser = new Parser({
-  timeout: 10000,
-  headers: { 'User-Agent': 'Mozilla/5.0 (compatible; NewsBot/1.0)' },
-});
+const parser = new Parser({ timeout: 10000 });
 
 export async function fetchFeed(source: NewsSource): Promise<RSSItem[]> {
   try {
-    const feed = await parser.parseURL(source.url);
-    return (feed.items ?? []).map(item => ({
-      title:          item.title?.trim() ?? '',
-      link:           item.link ?? item.guid ?? '',
+    const response = await fetch(source.url, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (compatible; NewsBot/1.0)',
+        'Accept': 'application/rss+xml, application/xml, text/xml, */*',
+      }
+    });
+    if (!response.ok) return [];
+    const xml = await response.text();
+    const feed = await parser.parseString(xml);
+    return (feed.items ?? []).map((item: any) => ({
+      title: item.title?.trim() ?? '',
+      link: item.link ?? item.guid ?? '',
       contentSnippet: item.contentSnippet?.trim() ?? item.summary?.trim() ?? '',
-      pubDate:        item.pubDate ?? item.isoDate ?? new Date().toISOString(),
-      source:         source.name,
-      category:       source.category,
-      enclosure:      item.enclosure ? { url: item.enclosure.url } : undefined,
-    })).filter(item => item.title && item.link);
+      pubDate: item.pubDate ?? item.isoDate ?? new Date().toISOString(),
+      source: source.name,
+      category: source.category,
+      enclosure: item.enclosure ? { url: item.enclosure.url } : undefined,
+    })).filter((item: any) => item.title && item.link);
   } catch {
     return [];
   }
