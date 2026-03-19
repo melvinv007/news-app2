@@ -42,20 +42,20 @@ type NavItem = {
 };
 
 const NAV_ITEMS: NavItem[] = [
-  { label: 'World',     href: '/world',     icon: Globe },
-  { label: 'India',     href: '/india',     icon: Flag },
-  { label: 'Mumbai',    href: '/mumbai',    icon: Building2 },
-  { label: 'AI / Tech', href: '/ai-tech',   icon: Cpu },
-  { label: 'Business',  href: '/business',  icon: Briefcase },
-  { label: 'Sports',    href: '/sports',    icon: Trophy },
-  { label: 'Stocks',    href: '/stocks',    icon: TrendingUp },
-  { label: 'Watchlist', href: '/watchlist',  icon: Eye },
-  { label: 'Settings',  href: '/settings',  icon: Settings },
+  { label: 'World', href: '/world', icon: Globe },
+  { label: 'India', href: '/india', icon: Flag },
+  { label: 'Mumbai', href: '/mumbai', icon: Building2 },
+  { label: 'AI / Tech', href: '/ai-tech', icon: Cpu },
+  { label: 'Business', href: '/business', icon: Briefcase },
+  { label: 'Sports', href: '/sports/cricket', icon: Trophy },
+  { label: 'Stocks', href: '/stocks', icon: TrendingUp },
+  { label: 'Watchlist', href: '/watchlist', icon: Eye },
+  { label: 'Settings', href: '/settings', icon: Settings },
 ];
 
 const sidebarVariants = {
   collapsed: { width: 64 },
-  expanded:  { width: 256 },
+  expanded: { width: 256 },
 };
 
 const springTransition = {
@@ -75,7 +75,7 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps): React.Re
   const pathname = usePathname();
 
   function isActive(href: string): boolean {
-    if (href === '/sports') {
+    if (href === '/sports/cricket') {
       return pathname.startsWith('/sports');
     }
     if (href === '/settings') {
