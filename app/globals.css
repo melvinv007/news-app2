@@ -1,0 +1,81 @@
+/* app/globals.css
+ * ─────────────────────────────────────────────────────────────────
+ * CSS variables (Stone dark palette) + Tailwind directives.
+ * All colors used in components reference these variables.
+ * To change the color scheme: edit these variables only.
+ */
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  /* Stone dark palette */
+  --bg-primary:    #1c1917;
+  --bg-secondary:  #292524;
+  --bg-tertiary:   #44403c;
+  --text-primary:  #fafaf9;
+  --text-secondary:#d6d3d1;
+  --text-muted:    #78716c;
+  --accent:        #f59e0b;
+  --accent-subtle: #451a03;
+  --border:        #292524;
+  --error:         #ef4444;
+  --warning:       #f59e0b;
+  --success:       #22c55e;
+
+  /* Font variables (loaded via next/font in layout.tsx) */
+  --font-serif:   'Lora', serif;
+  --font-display: 'Bricolage Grotesque', sans-serif;
+  --font-sans:    'DM Sans', sans-serif;
+  --font-mono:    'JetBrains Mono', monospace;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Shimmer animation for loading skeletons */
+.shimmer {
+  background: linear-gradient(
+    90deg,
+    var(--bg-secondary) 25%,
+    var(--bg-tertiary) 50%,
+    var(--bg-secondary) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite linear;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: var(--bg-primary);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--bg-tertiary);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-muted);
+}
+
+/* Focus ring consistent with accent color */
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
