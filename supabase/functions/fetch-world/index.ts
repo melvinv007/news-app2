@@ -1,36 +1,30 @@
 /**
  * supabase/functions/fetch-world/index.ts
  * ─────────────────────────────────────────────────────────────────
- * Fetches World + India + Mumbai news every 20 minutes.
- * Triggered by cron-job.org via HTTP POST with x-cron-secret header.
+ * Lightweight RSS-only fetch for World + India + Mumbai news.
+ * Triggered every 20 min by cron-job.org.
  *
- * Pipeline per article:
- *   1. RSS fetch (sequential, not parallel)
- *   2. URL dedup (already seen = skip)
- *   3. Groq 8B → story fingerprint
- *   4. TF-IDF dedup → cluster update or new story
- *   5. Readability → extract full article text
- *   6. Gemini → summarize + distill + clickbait (single call)
- *   7. Groq 8B → stock ticker matching
- *   8. Keyword match → watchlist matching (Gemini confirm)
- *   9. Insert to DB (embedding added separately by process-embeddings)
+ * Pipeline (no AI — stays under 30s cron limit):
+ *   1. Auth check (x-cron-secret)
+ *   2. Load user prefs (disabled sources, URL overrides)
+ *   3. Fetch RSS feeds
+ *   4. Per source: take up to 2 articles
+ *   5. Extract fingerprint via Groq (fast, <0.5s each)
+ *   6. Dedup against recent fingerprints
+ *   7. Insert raw article to DB (ai_processed = false)
  *
- * To change sources: edit config/sources.ts
- * To change interval: update cron-job.org schedule (see config/cron.ts)
+ * AI processing (summarize, watchlist, stocks) is handled
+ * separately by process-articles Edge Function.
  */
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { logger } from '../_shared/logger.ts';
 import { fetchAllRSS } from '../_shared/rss.ts';
-import { extractArticle } from '../_shared/extract.ts';
 import { filterDuplicates } from '../_shared/dedup.ts';
-import { matchWatchlistItems } from '../_shared/watchlist-match.ts';
-import { extractFingerprint, matchStockTickers } from '../_shared/groq.ts';
-import { summarizeArticle } from '../_shared/gemini.ts';
+import { extractFingerprint } from '../_shared/groq.ts';
 import { SOURCES } from '../_shared/sources.ts';
 
 Deno.serve(async (req) => {
-  // Authenticate cron trigger
   if (req.headers.get('x-cron-secret') !== Deno.env.get('CRON_SECRET')) {
     return new Response('Unauthorized', { status: 401 });
   }
@@ -43,12 +37,10 @@ Deno.serve(async (req) => {
   await log.info('Fetch-world started');
 
   try {
-    // Load sources for this function's categories
     const sources = SOURCES.filter(
       s => ['world', 'india', 'mumbai'].includes(s.category) && s.enabled
     );
 
-    // Load disabled sources from user preferences
     const { data: prefs } = await supabase
       .from('user_preferences')
       .select('disabled_sources, source_url_overrides')
@@ -56,28 +48,25 @@ Deno.serve(async (req) => {
 
     const disabledSources: string[] = prefs?.disabled_sources ?? [];
     const urlOverrides: Record<string, string> = prefs?.source_url_overrides ?? {};
-
     const activeSources = sources
       .filter(s => !disabledSources.includes(s.name))
       .map(s => ({ ...s, url: urlOverrides[s.name] ?? s.url }));
 
-    // Step 1: Fetch RSS feeds (sequential)
+    // Step 1: Fetch RSS
     const allArticles = await fetchAllRSS(activeSources, supabase);
-    // Take 1-2 articles per source instead of first N overall
     const bySource = activeSources.map(s =>
       allArticles.filter(a => a.source === s.name).slice(0, 2)
     );
     const articles = bySource.flat().slice(0, 5);
 
-    // Step 2: Extract fingerprints
+    // Step 2: Fingerprint
     for (const article of articles) {
       (article as Record<string, unknown>).fingerprint = await extractFingerprint(
-        article.title,
-        article.contentSnippet ?? '',
+        article.title, article.contentSnippet ?? '',
       );
     }
 
-    // Step 3: Deduplication — get recent fingerprints from DB
+    // Step 3: Dedup
     const { data: recents } = await supabase
       .from('articles')
       .select('story_fingerprint, category')
@@ -96,77 +85,28 @@ Deno.serve(async (req) => {
       supabase,
     );
 
-    // Load watchlist and stock watchlist once (outside article loop)
-    const { data: watchlistItems } = await supabase
-      .from('user_watchlist')
-      .select('*');
-
-    const { data: stockWatchlist } = await supabase
-      .from('stock_watchlist')
-      .select('ticker, display_name');
-
-    // Load custom prompts
-    const { data: prefsWithPrompts } = await supabase
-      .from('user_preferences')
-      .select('custom_summary_prompt, custom_watchlist_prompt')
-      .single();
-
+    // Step 4: Insert raw articles (no AI)
     let inserted = 0;
-
     for (const article of uniqueArticles) {
-      // Step 4: Extract full article text
-      const fullText = await extractArticle(article.link, supabase);
-
-      // Step 5: AI summarization
-      const aiResult = await summarizeArticle(
-        article.title,
-        fullText ?? article.contentSnippet ?? '',
-        prefsWithPrompts?.custom_summary_prompt,
-      );
-
-      if (!aiResult || aiResult.summary === null) continue; // Pure clickbait — skip
-
-      // Step 6: Stock ticker matching
-      const stockTickers = stockWatchlist
-        ? await matchStockTickers(
-          article.title,
-          aiResult.summary ?? '',
-          stockWatchlist,
-        )
-        : [];
-
-      // Step 7: Watchlist matching
-      const watchlistMatches = watchlistItems
-        ? await matchWatchlistItems(
-          article.title,
-          aiResult.summary ?? '',
-          watchlistItems,
-          supabase,
-          prefsWithPrompts?.custom_watchlist_prompt,
-        )
-        : [];
-
-      // Step 8: Insert article
       const { error } = await supabase.from('articles').insert({
-        title: aiResult.final_headline ?? article.title,
+        title: article.title,
         original_title: article.title,
-        summary: aiResult.summary,
-        full_content: aiResult.full_content_cleaned,
+        summary: null,
+        full_content: null,
         full_url: article.link,
         source_name: article.source,
         source_priority: activeSources.find(s => s.name === article.source)?.priority ?? 5,
         category: article.category,
-        topic_tags: aiResult.topic_tags,
+        topic_tags: null,
         published_at: article.pubDate,
         story_fingerprint: (article as Record<string, unknown>).fingerprint as string | null,
         source_count: 1,
         is_cluster_primary: true,
         has_update: false,
-        content_fetched: fullText !== null,
-        clickbait_score: aiResult.clickbait_score,
+        content_fetched: false,
+        clickbait_score: 0,
         is_null_article: false,
-        watchlist_matches: watchlistMatches.length > 0 ? watchlistMatches : null,
-        stock_tickers: stockTickers.length > 0 ? stockTickers : null,
+        ai_processed: false,
       });
 
       if (!error) inserted++;

@@ -25,7 +25,7 @@ export type WatchlistKeywordsResult = {
 
 async function generate(
   prompt: string,
-  primaryModel = 'gemini-2.5-flash',
+  primaryModel = 'gemini-1.5-flash-latest',
 ): Promise<string | null> {
   const chain: string[] = [primaryModel];
   let next = FALLBACK_CHAIN[primaryModel];
@@ -43,7 +43,15 @@ async function generate(
         err.message.includes('quota') ||
         err.message.includes('RESOURCE_EXHAUSTED')
       );
-      if (!isQuota) throw err;
+      if (isQuota) {
+        // If last model in chain and still quota, throw specific error
+        if (modelName === chain[chain.length - 1]) {
+          throw new Error('QUOTA_EXCEEDED');
+        }
+        // Otherwise try next model in chain
+        continue;
+      }
+      throw err;
     }
   }
   return null;
@@ -56,7 +64,16 @@ export async function summarizeArticle(
 ): Promise<SummarizeResult | null> {
   const template = customPrompt ?? DEFAULT_PROMPTS.summarize;
   const prompt = `${template}\n\nARTICLE TITLE: ${title}\n\nARTICLE TEXT:\n${fullText.slice(0, 8000)}`;
-  const raw = await generate(prompt);
+  let raw: string | null;
+  try {
+    raw = await generate(prompt);
+  } catch (err) {
+    // Re-throw quota errors so callers can detect and stop the run
+    if (err instanceof Error && err.message === 'QUOTA_EXCEEDED') {
+      throw err;
+    }
+    return null;
+  }
   if (!raw) return null;
   try {
     const clean = raw.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();

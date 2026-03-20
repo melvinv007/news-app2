@@ -9,10 +9,14 @@ import { DEFAULT_PROMPTS } from './ai-config.ts';
 const groq = new Groq({ apiKey: Deno.env.get('GROQ_API_KEY') ?? '' });
 const MODEL = 'llama-3.1-8b-instant';
 
-async function complete(prompt: string, maxTokens = 200): Promise<string | null> {
+async function complete(
+  prompt: string,
+  maxTokens = 200,
+  model: string = MODEL,
+): Promise<string | null> {
   try {
     const res = await groq.chat.completions.create({
-      model: MODEL,
+      model,
       messages: [{ role: 'user', content: prompt }],
       max_tokens: maxTokens,
       temperature: 0.1,
@@ -63,5 +67,36 @@ export async function matchStockTickers(
     return Array.isArray(parsed) ? parsed.filter((t: unknown) => typeof t === 'string') : [];
   } catch {
     return [];
+  }
+}
+
+export type SummarizeResult = {
+  summary: string | null;
+  full_content_cleaned: string;
+  clickbait_score: number;
+  final_headline: string;
+  topic_tags: string[];
+};
+
+export async function summarizeWithGroq(
+  title: string,
+  fullText: string,
+  model: 'llama-3.3-70b-versatile' | 'llama-3.1-8b-instant' = 'llama-3.3-70b-versatile',
+): Promise<SummarizeResult | null> {
+  const prompt = `${DEFAULT_PROMPTS.summarize}\n\nARTICLE TITLE: ${title}\n\nARTICLE TEXT:\n${fullText.slice(0, 8000)}`;
+  const result = await complete(prompt, 1000, model);
+  if (!result) return null;
+  try {
+    const clean = result.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+    const parsed = JSON.parse(clean);
+    return {
+      summary:              parsed.summary ?? null,
+      full_content_cleaned: parsed.full_content_cleaned ?? fullText,
+      clickbait_score:      Math.min(10, Math.max(0, parsed.clickbait_score ?? 0)),
+      final_headline:       parsed.final_headline ?? title,
+      topic_tags:           Array.isArray(parsed.topic_tags) ? parsed.topic_tags : [],
+    };
+  } catch {
+    return null;
   }
 }

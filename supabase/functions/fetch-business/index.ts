@@ -1,16 +1,18 @@
 /**
  * supabase/functions/fetch-business/index.ts
  * ─────────────────────────────────────────────────────────────────
- * Fetches Business + Stocks news every 20 minutes.
+ * Lightweight RSS-only fetch for Business + Stocks news.
+ * Triggered every 15 min by cron-job.org.
+ *
+ * No AI calls — articles are inserted raw with ai_processed = false.
+ * AI processing handled separately by process-articles function.
  */
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { logger } from '../_shared/logger.ts';
 import { fetchAllRSS } from '../_shared/rss.ts';
-import { extractArticle } from '../_shared/extract.ts';
 import { filterDuplicates } from '../_shared/dedup.ts';
-import { extractFingerprint, matchStockTickers } from '../_shared/groq.ts';
-import { summarizeArticle } from '../_shared/gemini.ts';
+import { extractFingerprint } from '../_shared/groq.ts';
 import { SOURCES } from '../_shared/sources.ts';
 
 Deno.serve(async (req) => {
@@ -26,12 +28,12 @@ Deno.serve(async (req) => {
   await log.info('Fetch-business started');
 
   try {
-    const bizCategories = ['business', 'stocks-india', 'stocks-us'];
-    const sources = SOURCES.filter(s => bizCategories.includes(s.category) && s.enabled);
+    const categories = ['business', 'stocks-india', 'stocks-us'];
+    const sources = SOURCES.filter(s => categories.includes(s.category) && s.enabled);
 
     const { data: prefs } = await supabase
       .from('user_preferences')
-      .select('disabled_sources, source_url_overrides, custom_summary_prompt')
+      .select('disabled_sources, source_url_overrides')
       .single();
 
     const disabledSources: string[] = prefs?.disabled_sources ?? [];
@@ -41,7 +43,6 @@ Deno.serve(async (req) => {
       .map(s => ({ ...s, url: urlOverrides[s.name] ?? s.url }));
 
     const allArticles = await fetchAllRSS(activeSources, supabase);
-    // Take 1-2 articles per source instead of first N overall
     const bySource = activeSources.map(s =>
       allArticles.filter(a => a.source === s.name).slice(0, 2)
     );
@@ -56,7 +57,7 @@ Deno.serve(async (req) => {
     const { data: recents } = await supabase
       .from('articles')
       .select('story_fingerprint, category')
-      .in('category', bizCategories)
+      .in('category', categories)
       .gte('published_at', new Date(Date.now() - 48 * 3600 * 1000).toISOString());
 
     const recentFingerprints: Record<string, string[]> = {};
@@ -72,44 +73,27 @@ Deno.serve(async (req) => {
       supabase,
     );
 
-    const { data: stockWatchlist } = await supabase
-      .from('stock_watchlist')
-      .select('ticker, display_name');
-
     let inserted = 0;
-
     for (const article of uniqueArticles) {
-      const fullText = await extractArticle(article.link, supabase);
-      const aiResult = await summarizeArticle(
-        article.title,
-        fullText ?? article.contentSnippet ?? '',
-        prefs?.custom_summary_prompt,
-      );
-      if (!aiResult || aiResult.summary === null) continue;
-
-      const stockTickers = stockWatchlist
-        ? await matchStockTickers(article.title, aiResult.summary ?? '', stockWatchlist)
-        : [];
-
       const { error } = await supabase.from('articles').insert({
-        title: aiResult.final_headline ?? article.title,
+        title: article.title,
         original_title: article.title,
-        summary: aiResult.summary,
-        full_content: aiResult.full_content_cleaned,
+        summary: null,
+        full_content: null,
         full_url: article.link,
         source_name: article.source,
         source_priority: activeSources.find(s => s.name === article.source)?.priority ?? 5,
         category: article.category,
-        topic_tags: aiResult.topic_tags,
+        topic_tags: null,
         published_at: article.pubDate,
         story_fingerprint: (article as Record<string, unknown>).fingerprint as string | null,
         source_count: 1,
         is_cluster_primary: true,
         has_update: false,
-        content_fetched: fullText !== null,
-        clickbait_score: aiResult.clickbait_score,
+        content_fetched: false,
+        clickbait_score: 0,
         is_null_article: false,
-        stock_tickers: stockTickers.length > 0 ? stockTickers : null,
+        ai_processed: false,
       });
 
       if (!error) inserted++;

@@ -37,9 +37,9 @@ export default function WatchlistPage(): React.ReactElement {
       .select('*')
       .not('watchlist_matches', 'is', null)
       .eq('is_cluster_primary', true)
+      .eq('ai_processed', true)
       .order('published_at', { ascending: false })
       .limit(PAGE_SIZE);
-
     if (error) {
       console.error('[Watchlist] Fetch error:', error.message);
     } else if (data) {

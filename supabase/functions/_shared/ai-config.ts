@@ -7,7 +7,7 @@ export const MODEL_ASSIGNMENTS = {
   fingerprinting: 'llama-3.1-8b-instant',
   watchlistKeywordCheck: 'llama-3.1-8b-instant',
   stockTickerMatch: 'llama-3.1-8b-instant',
-  summarization: 'gemini-2.5-flash-preview-04-17',
+  summarization: 'gemini-1.5-flash-latest',
   watchlistConfirmation: 'gemini-2.5-flash-preview-04-17',
   whyThisTooltip: 'gemini-2.5-flash-preview-04-17',
   embedding: 'text-embedding-004',

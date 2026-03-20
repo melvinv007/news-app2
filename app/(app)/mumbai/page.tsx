@@ -37,9 +37,9 @@ export default function MumbaiPage(): React.ReactElement {
       .select('*')
       .eq('category', CATEGORY)
       .eq('is_cluster_primary', true)
+      .eq('ai_processed', true)
       .order('published_at', { ascending: false })
       .limit(PAGE_SIZE);
-
     if (error) {
       console.error('[Mumbai] Fetch error:', error.message);
     } else if (data) {

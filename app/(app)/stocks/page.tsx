@@ -37,9 +37,9 @@ export default function StocksPage(): React.ReactElement {
       .select('*')
       .in('category', ['stocks-india', 'stocks-us'])
       .eq('is_cluster_primary', true)
+      .eq('ai_processed', true)
       .order('published_at', { ascending: false })
       .limit(PAGE_SIZE);
-
     if (error) {
       console.error('[Stocks] Fetch error:', error.message);
     } else if (data) {
