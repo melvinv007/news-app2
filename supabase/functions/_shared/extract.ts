@@ -1,10 +1,8 @@
 /**
  * supabase/functions/_shared/extract.ts
- * Article extraction for Edge Functions — jsdom + readability from esm.sh.
+ * Article extraction for Edge Functions — pure fetch + regex, no jsdom.
  */
 
-import { JSDOM } from 'https://esm.sh/jsdom@22.1.0';
-import { Readability } from 'https://esm.sh/@mozilla/readability@0.5.0';
 import type { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { logger } from './logger.ts';
 
@@ -24,22 +22,29 @@ export async function extractArticle(
     });
     clearTimeout(timeout);
 
-    if (!res.ok) {
-      await log.warn(`Article fetch failed: HTTP ${res.status}`, { url });
-      return null;
-    }
+    if (!res.ok) return null;
 
     const html = await res.text();
-    const dom = new JSDOM(html, { url });
-    const reader = new Readability(dom.window.document);
-    const article = reader.parse();
 
-    if (!article?.textContent) {
-      await log.warn('Readability extraction failed', { url });
-      return null;
-    }
+    // Remove scripts, styles, nav, footer, ads
+    const cleaned = html
+      .replace(/<script[\s\S]*?<\/script>/gi, '')
+      .replace(/<style[\s\S]*?<\/style>/gi, '')
+      .replace(/<nav[\s\S]*?<\/nav>/gi, '')
+      .replace(/<footer[\s\S]*?<\/footer>/gi, '')
+      .replace(/<header[\s\S]*?<\/header>/gi, '')
+      .replace(/<[^>]+>/g, ' ')
+      .replace(/&nbsp;/g, ' ')
+      .replace(/&amp;/g, '&')
+      .replace(/&lt;/g, '<')
+      .replace(/&gt;/g, '>')
+      .replace(/\s+/g, ' ')
+      .trim();
 
-    return article.textContent.replace(/\s+/g, ' ').trim();
+    if (cleaned.length < 100) return null;
+
+    // Return first 3000 chars — enough for Gemini summarization
+    return cleaned.slice(0, 3000);
 
   } catch (err: unknown) {
     const isTimeout = err instanceof Error && err.name === 'AbortError';

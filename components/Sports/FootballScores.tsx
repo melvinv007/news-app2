@@ -5,6 +5,10 @@
  * Fetches via /api/football-scores proxy (keeps API key server-side).
  * Polls every 60 seconds during match hours for live updates.
  *
+ * Matches filtered to next 7 days only.
+ * Grouped by competition (Premier League / Champions League).
+ * Times displayed in IST (UTC+5:30).
+ *
  * Graceful degradation: shows "No live matches" if empty.
  * FREE TIER: Premier League + Champions League only.
  *
@@ -30,13 +34,36 @@ type Match = {
 
 const POLL_INTERVAL = 60_000; // 60 seconds
 
-function formatMatchTime(utcDate: string): string {
-  return new Date(utcDate).toLocaleString('en-IN', {
-    day: 'numeric',
-    month: 'short',
-    hour: '2-digit',
-    minute: '2-digit',
-  });
+/** Format UTC date to IST (UTC+5:30) */
+function formatMatchTimeIST(utcDate: string): string {
+  const date = new Date(utcDate);
+  // Add 5h30m to get IST
+  const ist = new Date(date.getTime() + (5 * 60 + 30) * 60 * 1000);
+  const day = ist.getUTCDate();
+  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const month = months[ist.getUTCMonth()];
+  const hours = ist.getUTCHours().toString().padStart(2, '0');
+  const mins = ist.getUTCMinutes().toString().padStart(2, '0');
+  return `${day} ${month}, ${hours}:${mins} IST`;
+}
+
+/** Check if match is within the next 7 days */
+function isWithin7Days(utcDate: string): boolean {
+  const matchDate = new Date(utcDate).getTime();
+  const now = Date.now();
+  const sevenDays = 7 * 24 * 3600 * 1000;
+  return matchDate >= now && matchDate <= now + sevenDays;
+}
+
+/** Group matches by competition name */
+function groupByCompetition(matches: Match[]): Record<string, Match[]> {
+  const groups: Record<string, Match[]> = {};
+  for (const m of matches) {
+    const comp = m.competition || 'Other';
+    if (!groups[comp]) groups[comp] = [];
+    groups[comp].push(m);
+  }
+  return groups;
 }
 
 export default function FootballScores(): React.ReactElement {
@@ -58,7 +85,8 @@ export default function FootballScores(): React.ReactElement {
 
       if (upcomingRes.ok) {
         const data = (await upcomingRes.json()) as { matches: Match[] };
-        setUpcomingMatches(data.matches);
+        // Filter to next 7 days only
+        setUpcomingMatches(data.matches.filter(m => isWithin7Days(m.utcDate)));
       }
     } catch {
       // Graceful degrade
@@ -92,12 +120,15 @@ export default function FootballScores(): React.ReactElement {
     );
   }
 
+  const liveGrouped = groupByCompetition(liveMatches);
+  const upcomingGrouped = groupByCompetition(upcomingMatches);
+
   return (
     <div
       className="rounded-xl p-4 md:p-5"
       style={{ backgroundColor: 'var(--bg-secondary)' }}
     >
-      {/* Live matches */}
+      {/* Live matches — grouped by competition */}
       {liveMatches.length > 0 && (
         <div className="mb-4">
           <div className="flex items-center gap-2 mb-3">
@@ -109,29 +140,39 @@ export default function FootballScores(): React.ReactElement {
               Live
             </span>
           </div>
-          <div className="space-y-2">
-            {liveMatches.map((match) => (
-              <div
-                key={match.id}
-                className="flex items-center justify-between px-3 py-2 rounded-lg"
-                style={{ backgroundColor: 'var(--bg-tertiary)' }}
+          {Object.entries(liveGrouped).map(([comp, matches]) => (
+            <div key={comp} className="mb-3 last:mb-0">
+              <p
+                className="font-sans text-[11px] font-semibold uppercase tracking-wider mb-1.5 px-1"
+                style={{ color: 'var(--text-muted)' }}
               >
-                <span className="font-sans text-sm" style={{ color: 'var(--text-primary)' }}>
-                  {match.homeTeam}
-                </span>
-                <span className="font-mono text-sm font-bold" style={{ color: 'var(--accent)' }}>
-                  {match.homeScore ?? 0} – {match.awayScore ?? 0}
-                </span>
-                <span className="font-sans text-sm text-right" style={{ color: 'var(--text-primary)' }}>
-                  {match.awayTeam}
-                </span>
+                {comp}
+              </p>
+              <div className="space-y-1.5">
+                {matches.map((match) => (
+                  <div
+                    key={match.id}
+                    className="flex items-center justify-between px-3 py-2 rounded-lg"
+                    style={{ backgroundColor: 'var(--bg-tertiary)' }}
+                  >
+                    <span className="font-sans text-sm" style={{ color: 'var(--text-primary)' }}>
+                      {match.homeTeam}
+                    </span>
+                    <span className="font-mono text-sm font-bold" style={{ color: 'var(--accent)' }}>
+                      {match.homeScore ?? 0} – {match.awayScore ?? 0}
+                    </span>
+                    <span className="font-sans text-sm text-right" style={{ color: 'var(--text-primary)' }}>
+                      {match.awayTeam}
+                    </span>
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
+            </div>
+          ))}
         </div>
       )}
 
-      {/* Upcoming matches */}
+      {/* Upcoming matches — grouped by competition, next 7 days, times in IST */}
       <div>
         <div className="flex items-center gap-2 mb-3">
           <Calendar size={14} style={{ color: 'var(--text-muted)' }} />
@@ -139,7 +180,7 @@ export default function FootballScores(): React.ReactElement {
             className="font-sans text-xs font-semibold uppercase tracking-wider"
             style={{ color: 'var(--text-muted)' }}
           >
-            Upcoming
+            Upcoming (Next 7 days)
           </span>
         </div>
         {upcomingMatches.length === 0 && liveMatches.length === 0 ? (
@@ -150,22 +191,32 @@ export default function FootballScores(): React.ReactElement {
             </span>
           </div>
         ) : (
-          <div className="space-y-2">
-            {upcomingMatches.map((match) => (
-              <div
-                key={match.id}
-                className="flex items-center justify-between px-3 py-2 rounded-lg"
-                style={{ backgroundColor: 'var(--bg-primary)' }}
+          Object.entries(upcomingGrouped).map(([comp, matches]) => (
+            <div key={comp} className="mb-3 last:mb-0">
+              <p
+                className="font-sans text-[11px] font-semibold uppercase tracking-wider mb-1.5 px-1"
+                style={{ color: 'var(--text-muted)' }}
               >
-                <span className="font-sans text-sm" style={{ color: 'var(--text-secondary)' }}>
-                  {match.homeTeam} vs {match.awayTeam}
-                </span>
-                <span className="font-sans text-xs" style={{ color: 'var(--text-muted)' }}>
-                  {formatMatchTime(match.utcDate)}
-                </span>
+                {comp}
+              </p>
+              <div className="space-y-1.5">
+                {matches.map((match) => (
+                  <div
+                    key={match.id}
+                    className="flex items-center justify-between px-3 py-2 rounded-lg"
+                    style={{ backgroundColor: 'var(--bg-primary)' }}
+                  >
+                    <span className="font-sans text-sm" style={{ color: 'var(--text-secondary)' }}>
+                      {match.homeTeam} vs {match.awayTeam}
+                    </span>
+                    <span className="font-sans text-xs" style={{ color: 'var(--text-muted)' }}>
+                      {formatMatchTimeIST(match.utcDate)}
+                    </span>
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
+            </div>
+          ))
         )}
       </div>
 

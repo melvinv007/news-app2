@@ -62,7 +62,12 @@ Deno.serve(async (req) => {
       .map(s => ({ ...s, url: urlOverrides[s.name] ?? s.url }));
 
     // Step 1: Fetch RSS feeds (sequential)
-    const articles = (await fetchAllRSS(activeSources, supabase)).slice(0, 10);
+    const allArticles = await fetchAllRSS(activeSources, supabase);
+    // Take 1-2 articles per source instead of first N overall
+    const bySource = activeSources.map(s =>
+      allArticles.filter(a => a.source === s.name).slice(0, 2)
+    );
+    const articles = bySource.flat().slice(0, 5);
 
     // Step 2: Extract fingerprints
     for (const article of articles) {

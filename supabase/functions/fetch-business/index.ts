@@ -40,7 +40,12 @@ Deno.serve(async (req) => {
       .filter(s => !disabledSources.includes(s.name))
       .map(s => ({ ...s, url: urlOverrides[s.name] ?? s.url }));
 
-    const articles = (await fetchAllRSS(activeSources, supabase)).slice(0, 10);
+    const allArticles = await fetchAllRSS(activeSources, supabase);
+    // Take 1-2 articles per source instead of first N overall
+    const bySource = activeSources.map(s =>
+      allArticles.filter(a => a.source === s.name).slice(0, 2)
+    );
+    const articles = bySource.flat().slice(0, 5);
 
     for (const article of articles) {
       (article as Record<string, unknown>).fingerprint = await extractFingerprint(

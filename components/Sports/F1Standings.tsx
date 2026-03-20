@@ -1,45 +1,49 @@
 /**
  * components/Sports/F1Standings.tsx
  * ─────────────────────────────────────────────────────────────────
- * F1 standings proxy. No official free API — standings come from
- * race-result articles in the DB.
+ * F1 driver standings from OpenF1 API via /api/f1?type=standings.
  *
- * Queries the last 3 articles with 'standings' in the title
- * from category 'sports-f1' and displays them as mini cards.
+ * Shows driver standings table: Position | Driver | Team | Points.
+ * P1 highlighted in amber. font-mono for numbers.
  *
- * How to change: If a free standings API becomes available, replace here.
+ * Graceful degrade: "Standings unavailable after first race" if API
+ * returns no data (pre-season or API down).
+ *
  * Used by: app/(app)/sports/f1/page.tsx
  */
 
 'use client';
 
 import { useState, useEffect } from 'react';
-import { BarChart3, ExternalLink } from 'lucide-react';
-import { createClient } from '@/lib/supabase/client';
-import type { Article } from '@/lib/supabase/types';
+import { BarChart3, AlertCircle } from 'lucide-react';
+
+type DriverStanding = {
+  position: number;
+  driver: string;
+  team: string;
+  points: number;
+};
 
 export default function F1Standings(): React.ReactElement {
-  const [articles, setArticles] = useState<Article[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
+  const [standings, setStandings] = useState<DriverStanding[] | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    async function fetchStandingsArticles(): Promise<void> {
-      const supabase = createClient();
-      const { data } = await supabase
-        .from('articles')
-        .select('*')
-        .eq('category', 'sports-f1')
-        .ilike('title', '%standings%')
-        .order('published_at', { ascending: false })
-        .limit(3);
-
-      if (data) {
-        setArticles(data);
+    async function fetchStandings(): Promise<void> {
+      try {
+        const res = await fetch('/api/f1?type=standings');
+        if (res.ok) {
+          const data = await res.json();
+          setStandings(data.standings ?? null);
+        }
+      } catch {
+        // Graceful degrade
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     }
 
-    fetchStandingsArticles();
+    fetchStandings();
   }, []);
 
   return (
@@ -54,60 +58,77 @@ export default function F1Standings(): React.ReactElement {
           className="font-sans text-xs font-semibold uppercase tracking-wider"
           style={{ color: 'var(--text-muted)' }}
         >
-          Standings
+          Driver Standings
         </span>
       </div>
 
-      {/* Info message */}
-      <p className="font-sans text-xs mb-3" style={{ color: 'var(--text-muted)' }}>
-        Standings are updated via race result articles below.
-      </p>
-
       {loading ? (
         <div className="space-y-2">
-          {Array.from({ length: 3 }).map((_, i) => (
-            <div key={i} className="h-12 rounded-lg shimmer" />
+          {Array.from({ length: 5 }).map((_, i) => (
+            <div key={i} className="h-8 rounded-lg shimmer" />
           ))}
         </div>
-      ) : articles.length === 0 ? (
-        <p className="font-sans text-sm py-4 text-center" style={{ color: 'var(--text-muted)' }}>
-          No standings articles yet
-        </p>
+      ) : !standings || standings.length === 0 ? (
+        <div className="flex items-center gap-2 py-4 justify-center">
+          <AlertCircle size={16} style={{ color: 'var(--text-muted)' }} />
+          <span className="font-sans text-sm" style={{ color: 'var(--text-muted)' }}>
+            Standings unavailable after first race
+          </span>
+        </div>
       ) : (
-        <div className="space-y-2">
-          {articles.map((article) => (
-            <a
-              key={article.id}
-              href={article.full_url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center justify-between px-3 py-2.5 rounded-lg transition-colors group"
-              style={{ backgroundColor: 'var(--bg-primary)' }}
-              onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-tertiary)')}
-              onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-primary)')}
-            >
-              <div className="min-w-0">
-                <p
-                  className="font-sans text-sm font-medium truncate"
-                  style={{ color: 'var(--text-primary)' }}
+        <div className="overflow-x-auto">
+          {/* Table header */}
+          <div
+            className="grid grid-cols-[2rem_1fr_1fr_3rem] gap-2 px-2 py-1.5 text-[11px] font-sans font-semibold uppercase tracking-wider"
+            style={{ color: 'var(--text-muted)' }}
+          >
+            <span>P</span>
+            <span>Driver</span>
+            <span>Team</span>
+            <span className="text-right">Pts</span>
+          </div>
+
+          {/* Table rows */}
+          <div className="space-y-0.5">
+            {standings.map((d) => {
+              const isP1 = d.position === 1;
+
+              return (
+                <div
+                  key={d.position}
+                  className="grid grid-cols-[2rem_1fr_1fr_3rem] gap-2 px-2 py-1.5 rounded-lg text-sm"
+                  style={{
+                    backgroundColor: isP1 ? 'var(--accent-subtle)' : 'var(--bg-primary)',
+                  }}
                 >
-                  {article.title}
-                </p>
-                <p className="font-sans text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
-                  {article.source_name} •{' '}
-                  {new Date(article.published_at).toLocaleDateString('en-IN', {
-                    day: 'numeric',
-                    month: 'short',
-                  })}
-                </p>
-              </div>
-              <ExternalLink
-                size={14}
-                className="flex-shrink-0 ml-2 opacity-0 group-hover:opacity-100 transition-opacity"
-                style={{ color: 'var(--text-muted)' }}
-              />
-            </a>
-          ))}
+                  <span
+                    className="font-mono text-xs font-bold"
+                    style={{ color: isP1 ? 'var(--accent)' : 'var(--text-muted)' }}
+                  >
+                    {d.position}
+                  </span>
+                  <span
+                    className="font-sans text-sm truncate"
+                    style={{ color: isP1 ? 'var(--accent)' : 'var(--text-primary)' }}
+                  >
+                    {d.driver}
+                  </span>
+                  <span
+                    className="font-sans text-xs truncate self-center"
+                    style={{ color: 'var(--text-muted)' }}
+                  >
+                    {d.team}
+                  </span>
+                  <span
+                    className="font-mono text-sm text-right font-bold"
+                    style={{ color: isP1 ? 'var(--accent)' : 'var(--text-secondary)' }}
+                  >
+                    {d.points}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
         </div>
       )}
     </div>

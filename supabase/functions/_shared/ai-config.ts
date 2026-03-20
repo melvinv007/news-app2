@@ -4,18 +4,18 @@
  */
 
 export const MODEL_ASSIGNMENTS = {
-  fingerprinting:        'llama-3.1-8b-instant',
+  fingerprinting: 'llama-3.1-8b-instant',
   watchlistKeywordCheck: 'llama-3.1-8b-instant',
-  stockTickerMatch:      'llama-3.1-8b-instant',
-  summarization:         'gemini-2.5-flash',
-  watchlistConfirmation: 'gemini-2.5-flash',
-  whyThisTooltip:        'gemini-2.5-flash',
-  embedding:             'text-embedding-004',
+  stockTickerMatch: 'llama-3.1-8b-instant',
+  summarization: 'gemini-2.5-flash-preview-04-17',
+  watchlistConfirmation: 'gemini-2.5-flash-preview-04-17',
+  whyThisTooltip: 'gemini-2.5-flash-preview-04-17',
+  embedding: 'text-embedding-004',
 } as const;
 
 export const FALLBACK_CHAIN: Record<string, string | null> = {
-  'gemini-2.5-flash': 'gemini-1.5-flash',
-  'gemini-1.5-flash': null,
+  'gemini-2.5-flash-preview-04-17': 'gemini-1.5-flash-latest',
+  'gemini-1.5-flash-latest': null,
 };
 
 export const DEFAULT_PROMPTS = {
@@ -111,10 +111,10 @@ Return ONLY valid JSON. No markdown fences.`.trim(),
 };
 
 export const PROMPT_LABELS: Record<keyof typeof DEFAULT_PROMPTS, string> = {
-  fingerprint:      'Story Fingerprint Extraction',
-  summarize:        'Summarization + Distillation + Clickbait Detection',
+  fingerprint: 'Story Fingerprint Extraction',
+  summarize: 'Summarization + Distillation + Clickbait Detection',
   watchlistConfirm: 'Watchlist Match Confirmation',
-  whyThis:          '"Why am I seeing this?" Tooltip',
-  stockTicker:      'Stock Ticker Matching',
-  watchlistKeywords:'Watchlist Keyword Generation',
+  whyThis: '"Why am I seeing this?" Tooltip',
+  stockTicker: 'Stock Ticker Matching',
+  watchlistKeywords: 'Watchlist Keyword Generation',
 };
