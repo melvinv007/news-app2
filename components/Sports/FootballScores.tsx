@@ -6,13 +6,10 @@
  * Polls every 60 seconds during match hours for live updates.
  *
  * Matches filtered to next 7 days only.
- * Grouped by competition (Premier League / Champions League).
+ * Grouped by competition (Premier League / Champions League / etc).
  * Times displayed in IST (UTC+5:30).
+ * Man City and Barcelona matches highlighted with amber border.
  *
- * Graceful degradation: shows "No live matches" if empty.
- * FREE TIER: Premier League + Champions League only.
- *
- * How to change poll interval: Edit POLL_INTERVAL below.
  * Used by: app/(app)/sports/football/page.tsx
  */
 
@@ -30,14 +27,14 @@ type Match = {
   status: string;
   competition: string;
   utcDate: string;
+  isHighlighted: boolean;
 };
 
-const POLL_INTERVAL = 60_000; // 60 seconds
+const POLL_INTERVAL = 60_000;
 
 /** Format UTC date to IST (UTC+5:30) */
 function formatMatchTimeIST(utcDate: string): string {
   const date = new Date(utcDate);
-  // Add 5h30m to get IST
   const ist = new Date(date.getTime() + (5 * 60 + 30) * 60 * 1000);
   const day = ist.getUTCDate();
   const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
@@ -45,14 +42,6 @@ function formatMatchTimeIST(utcDate: string): string {
   const hours = ist.getUTCHours().toString().padStart(2, '0');
   const mins = ist.getUTCMinutes().toString().padStart(2, '0');
   return `${day} ${month}, ${hours}:${mins} IST`;
-}
-
-/** Check if match is within the next 7 days */
-function isWithin7Days(utcDate: string): boolean {
-  const matchDate = new Date(utcDate).getTime();
-  const now = Date.now();
-  const sevenDays = 7 * 24 * 3600 * 1000;
-  return matchDate >= now && matchDate <= now + sevenDays;
 }
 
 /** Group matches by competition name */
@@ -75,18 +64,17 @@ export default function FootballScores(): React.ReactElement {
     try {
       const [liveRes, upcomingRes] = await Promise.all([
         fetch('/api/football-scores?type=live'),
-        fetch('/api/football-scores?type=upcoming&competition=PL'),
+        fetch('/api/football-scores?type=upcoming'),
       ]);
 
       if (liveRes.ok) {
-        const data = (await liveRes.json()) as { matches: Match[] };
-        setLiveMatches(data.matches);
+        const data = (await liveRes.json()) as { live: Match[] };
+        setLiveMatches(data.live ?? []);
       }
 
       if (upcomingRes.ok) {
-        const data = (await upcomingRes.json()) as { matches: Match[] };
-        // Filter to next 7 days only
-        setUpcomingMatches(data.matches.filter(m => isWithin7Days(m.utcDate)));
+        const data = (await upcomingRes.json()) as { upcoming: Match[] };
+        setUpcomingMatches(data.upcoming ?? []);
       }
     } catch {
       // Graceful degrade
@@ -153,15 +141,32 @@ export default function FootballScores(): React.ReactElement {
                   <div
                     key={match.id}
                     className="flex items-center justify-between px-3 py-2 rounded-lg"
-                    style={{ backgroundColor: 'var(--bg-tertiary)' }}
+                    style={{
+                      backgroundColor: 'var(--bg-tertiary)',
+                      ...(match.isHighlighted
+                        ? { borderLeft: '3px solid var(--accent)' }
+                        : {}),
+                    }}
                   >
-                    <span className="font-sans text-sm" style={{ color: 'var(--text-primary)' }}>
+                    <span
+                      className="font-sans text-sm"
+                      style={{
+                        color: 'var(--text-primary)',
+                        fontWeight: match.isHighlighted ? 600 : 400,
+                      }}
+                    >
                       {match.homeTeam}
                     </span>
                     <span className="font-mono text-sm font-bold" style={{ color: 'var(--accent)' }}>
                       {match.homeScore ?? 0} – {match.awayScore ?? 0}
                     </span>
-                    <span className="font-sans text-sm text-right" style={{ color: 'var(--text-primary)' }}>
+                    <span
+                      className="font-sans text-sm text-right"
+                      style={{
+                        color: 'var(--text-primary)',
+                        fontWeight: match.isHighlighted ? 600 : 400,
+                      }}
+                    >
                       {match.awayTeam}
                     </span>
                   </div>
@@ -172,7 +177,7 @@ export default function FootballScores(): React.ReactElement {
         </div>
       )}
 
-      {/* Upcoming matches — grouped by competition, next 7 days, times in IST */}
+      {/* Upcoming matches — grouped by competition, times in IST */}
       <div>
         <div className="flex items-center gap-2 mb-3">
           <Calendar size={14} style={{ color: 'var(--text-muted)' }} />
@@ -187,7 +192,7 @@ export default function FootballScores(): React.ReactElement {
           <div className="flex items-center gap-2 py-4 justify-center">
             <Trophy size={16} style={{ color: 'var(--text-muted)' }} />
             <span className="font-sans text-sm" style={{ color: 'var(--text-muted)' }}>
-              No live matches right now
+              No upcoming matches this week
             </span>
           </div>
         ) : (
@@ -204,9 +209,20 @@ export default function FootballScores(): React.ReactElement {
                   <div
                     key={match.id}
                     className="flex items-center justify-between px-3 py-2 rounded-lg"
-                    style={{ backgroundColor: 'var(--bg-primary)' }}
+                    style={{
+                      backgroundColor: 'var(--bg-primary)',
+                      ...(match.isHighlighted
+                        ? { borderLeft: '3px solid var(--accent)' }
+                        : {}),
+                    }}
                   >
-                    <span className="font-sans text-sm" style={{ color: 'var(--text-secondary)' }}>
+                    <span
+                      className="font-sans text-sm"
+                      style={{
+                        color: 'var(--text-secondary)',
+                        fontWeight: match.isHighlighted ? 600 : 400,
+                      }}
+                    >
                       {match.homeTeam} vs {match.awayTeam}
                     </span>
                     <span className="font-sans text-xs" style={{ color: 'var(--text-muted)' }}>
@@ -222,7 +238,7 @@ export default function FootballScores(): React.ReactElement {
 
       {/* Note */}
       <p className="font-sans text-xs mt-3" style={{ color: 'var(--text-muted)' }}>
-        Live scores: Premier League &amp; Champions League only
+        PL · CL · Serie A · Bundesliga · Ligue 1 · ISL
       </p>
     </div>
   );

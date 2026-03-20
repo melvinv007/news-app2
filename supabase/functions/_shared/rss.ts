@@ -22,12 +22,18 @@ const parser = new Parser({ timeout: 10000 });
 
 export async function fetchFeed(source: NewsSource): Promise<RSSItem[]> {
   try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 3000);
+
     const response = await fetch(source.url, {
+      signal: controller.signal,
       headers: {
         'User-Agent': 'Mozilla/5.0 (compatible; NewsBot/1.0)',
         'Accept': 'application/rss+xml, application/xml, text/xml, */*',
       }
     });
+    clearTimeout(timeout);
+
     if (!response.ok) return [];
     const xml = await response.text();
     const feed = await parser.parseString(xml);
@@ -44,6 +50,7 @@ export async function fetchFeed(source: NewsSource): Promise<RSSItem[]> {
     return [];
   }
 }
+
 
 export async function fetchAllRSS(
   sources: NewsSource[],

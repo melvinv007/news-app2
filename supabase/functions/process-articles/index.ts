@@ -48,7 +48,7 @@ Deno.serve(async (req) => {
       .eq('ai_processed', false)
       .eq('is_null_article', false)
       .order('created_at', { ascending: true })
-      .limit(8);
+      .limit(4);
 
     if (!unprocessed || unprocessed.length === 0) {
       await log.info('Process-articles: no unprocessed articles');
@@ -137,21 +137,21 @@ Deno.serve(async (req) => {
         // 3c: Stock ticker matching
         const stockTickers = stockWatchlist
           ? await matchStockTickers(
-              article.title,
-              aiResult.summary ?? '',
-              stockWatchlist,
-            )
+            article.title,
+            aiResult.summary ?? '',
+            stockWatchlist,
+          )
           : [];
 
         // 3d: Watchlist matching
         const watchlistMatches = watchlistItems
           ? await matchWatchlistItems(
-              article.title,
-              aiResult.summary ?? '',
-              watchlistItems,
-              supabase,
-              prefs?.custom_watchlist_prompt,
-            )
+            article.title,
+            aiResult.summary ?? '',
+            watchlistItems,
+            supabase,
+            prefs?.custom_watchlist_prompt,
+          )
           : [];
 
         // 3e: Update article with AI results

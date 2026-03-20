@@ -31,6 +31,7 @@ export default function WorldPage(): React.ReactElement {
   const [articles, setArticles] = useState<Article[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [selectedArticle, setSelectedArticle] = useState<Article | null>(null);
+  const [lastUpdated, setLastUpdated] = useState<string | null>(null);
 
   // Fetch personalised articles via RPC
   const fetchArticles = useCallback(async (): Promise<void> => {
@@ -46,6 +47,7 @@ export default function WorldPage(): React.ReactElement {
       console.error('[World] Fetch error:', error.message);
     } else if (data) {
       setArticles(data as Article[]);
+      setLastUpdated(new Date().toISOString());
     }
     setLoading(false);
   }, []);
@@ -92,6 +94,7 @@ export default function WorldPage(): React.ReactElement {
       <SectionHeader
         title="World"
         subtitle="Personalised for you"
+        lastUpdated={lastUpdated}
       />
       <ArticleGrid
         articles={articles}

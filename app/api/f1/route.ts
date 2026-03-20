@@ -5,7 +5,7 @@
  *
  * Query params:
  *   ?type=calendar  → All meetings for current year, sorted by date
- *   ?type=standings → Latest driver standings
+ *   ?type=standings → Driver positions from latest session
  *   ?type=next      → Next upcoming meeting
  *
  * Graceful degrade: returns null data on any fetch failure.
@@ -27,14 +27,17 @@ type OpenF1Meeting = {
   year: number;
 };
 
-type OpenF1Standing = {
-  position: number;
+type OpenF1Driver = {
   driver_number: number;
   full_name: string;
   name_acronym: string;
   team_name: string;
-  points: number;
-  wins: number;
+  session_key: number;
+};
+
+type OpenF1Position = {
+  driver_number: number;
+  position: number;
   session_key: number;
 };
 
@@ -46,7 +49,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     if (type === 'calendar') {
       const year = new Date().getFullYear();
       const res = await fetch(`https://api.openf1.org/v1/meetings?year=${year}`, {
-        next: { revalidate: 3600 }, // cache 1 hour
+        next: { revalidate: 3600 },
       });
 
       if (!res.ok) {
@@ -100,28 +103,55 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     }
 
     if (type === 'standings') {
-      const res = await fetch(`https://api.openf1.org/v1/drivers?session_key=latest`, {
-        next: { revalidate: 3600 },
-      });
+      // Fetch drivers and positions from the latest session
+      const [driversRes, positionsRes] = await Promise.all([
+        fetch('https://api.openf1.org/v1/drivers?session_key=latest', {
+          next: { revalidate: 3600 },
+        }),
+        fetch('https://api.openf1.org/v1/position?session_key=latest', {
+          next: { revalidate: 3600 },
+        }),
+      ]);
 
-      if (!res.ok) {
+      if (!driversRes.ok || !positionsRes.ok) {
         return NextResponse.json({ standings: null });
       }
 
-      const drivers: OpenF1Standing[] = await res.json();
+      const drivers: OpenF1Driver[] = await driversRes.json();
+      const positions: OpenF1Position[] = await positionsRes.json();
 
-      // OpenF1 may return drivers without position — filter to those with standings data
-      const withPositions = drivers
-        .filter((d) => d.position != null && d.points != null)
-        .sort((a, b) => a.position - b.position)
-        .map((d) => ({
-          position: d.position,
-          driver: d.full_name ?? d.name_acronym,
-          team: d.team_name ?? '',
-          points: d.points ?? 0,
-        }));
+      if (!drivers.length || !positions.length) {
+        return NextResponse.json({ standings: null });
+      }
 
-      return NextResponse.json({ standings: withPositions.length > 0 ? withPositions : null });
+      // Build a map of driver_number → driver info
+      const driverMap = new Map<number, OpenF1Driver>();
+      for (const d of drivers) {
+        driverMap.set(d.driver_number, d);
+      }
+
+      // Get the latest position for each driver (last entry wins)
+      const latestPositions = new Map<number, number>();
+      for (const p of positions) {
+        latestPositions.set(p.driver_number, p.position);
+      }
+
+      // Join drivers with positions
+      const standings = Array.from(latestPositions.entries())
+        .map(([driverNum, position]) => {
+          const driver = driverMap.get(driverNum);
+          return {
+            position,
+            driverName: driver?.full_name ?? driver?.name_acronym ?? `#${driverNum}`,
+            teamName: driver?.team_name ?? '',
+            driverNumber: driverNum,
+          };
+        })
+        .sort((a, b) => a.position - b.position);
+
+      return NextResponse.json({
+        standings: standings.length > 0 ? standings : null,
+      });
     }
 
     return NextResponse.json({ error: 'Invalid type param' }, { status: 400 });

@@ -35,7 +35,7 @@ export const SOURCES: NewsSource[] = [
   { name: 'Al Jazeera', url: 'https://www.aljazeera.com/xml/rss/all.xml', priority: 8, category: 'world', enabled: true },
   { name: 'The Guardian', url: 'https://www.theguardian.com/world/rss', priority: 7, category: 'world', enabled: true },
   { name: 'NPR World', url: 'https://feeds.npr.org/1004/rss.xml', priority: 7, category: 'world', enabled: true },
-  { name: 'DW News', url: 'https://rss.dw.com/xml/rss-en-all', priority: 7, category: 'world', enabled: true },
+  { name: 'DW News', url: 'https://rss.dw.com/rdf/rss-en-all', priority: 7, category: 'world', enabled: true },
   { name: 'France 24', url: 'https://www.france24.com/en/rss', priority: 6, category: 'world', enabled: true },
   { name: 'ABC News World', url: 'https://abcnews.go.com/abcnews/internationalheadlines', priority: 6, category: 'world', enabled: true },
 
@@ -54,6 +54,7 @@ export const SOURCES: NewsSource[] = [
   { name: 'Mumbai Live', url: 'https://news.google.com/rss/search?q=when:24h+mumbai&ceid=IN:en&hl=en-IN&gl=IN', priority: 7, category: 'mumbai', enabled: true },
   { name: 'Mid-Day', url: 'https://news.google.com/rss/search?q=when:24h+allinurl:mid-day.com&ceid=IN:en&hl=en-IN&gl=IN', priority: 6, category: 'mumbai', enabled: true },
   { name: 'Free Press India', url: 'https://news.google.com/rss/search?q=when:24h+mumbai+city&ceid=IN:en&hl=en-IN&gl=IN', priority: 6, category: 'mumbai', enabled: true },
+  { name: 'Mumbai News', url: 'https://news.google.com/rss/search?q=when:24h+mumbai+news&ceid=IN:en&hl=en-IN&gl=IN', priority: 7, category: 'mumbai', enabled: true },
 
   // ── SPORTS — CRICKET ──────────────────────────────────────────────────────
   { name: 'ESPN Cricinfo', url: 'https://www.espncricinfo.com/rss/content/story/feeds/0.xml', priority: 9, category: 'sports-cricket', enabled: true },
@@ -111,7 +112,7 @@ export const SOURCES: NewsSource[] = [
 
   // ── STOCKS — INDIA ────────────────────────────────────────────────────────
   { name: 'ET Markets', url: 'https://economictimes.indiatimes.com/markets/rssfeeds/1977021501.cms', priority: 9, category: 'stocks-india', enabled: true },
-  { name: 'Moneycontrol', url: 'https://www.moneycontrol.com/rss/MCtopnews.xml', priority: 8, category: 'stocks-india', enabled: true },
+  { name: 'Moneycontrol', url: 'https://www.moneycontrol.com/rss/latestnews.xml', priority: 8, category: 'stocks-india', enabled: true },
   { name: 'LiveMint Markets', url: 'https://www.livemint.com/rss/markets', priority: 8, category: 'stocks-india', enabled: true },
   { name: 'BSE India', url: 'https://news.google.com/rss/search?q=when:24h+NSE+BSE+sensex+nifty&ceid=IN:en&hl=en-IN&gl=IN', priority: 7, category: 'stocks-india', enabled: true },
 

@@ -29,6 +29,7 @@ export default function WatchlistPage(): React.ReactElement {
   const [articles, setArticles] = useState<Article[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [selectedArticle, setSelectedArticle] = useState<Article | null>(null);
+  const [lastUpdated, setLastUpdated] = useState<string | null>(null);
 
   const fetchArticles = useCallback(async (): Promise<void> => {
     const supabase = createClient();
@@ -44,6 +45,7 @@ export default function WatchlistPage(): React.ReactElement {
       console.error('[Watchlist] Fetch error:', error.message);
     } else if (data) {
       setArticles(data);
+      setLastUpdated(new Date().toISOString());
     }
     setLoading(false);
   }, []);
@@ -84,6 +86,7 @@ export default function WatchlistPage(): React.ReactElement {
       <SectionHeader
         title="My Watchlist"
         subtitle="Articles matching your tracked topics"
+        lastUpdated={lastUpdated}
       />
       <WatchlistPanel />
       <div className="mt-6">

@@ -28,6 +28,7 @@ export default function CricketPage(): React.ReactElement {
   const [articles, setArticles] = useState<Article[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [selectedArticle, setSelectedArticle] = useState<Article | null>(null);
+  const [lastUpdated, setLastUpdated] = useState<string | null>(null);
 
   const fetchArticles = useCallback(async (): Promise<void> => {
     const supabase = createClient();
@@ -44,6 +45,7 @@ export default function CricketPage(): React.ReactElement {
       console.error('[Cricket] Fetch error:', error.message);
     } else if (data) {
       setArticles(data);
+      setLastUpdated(new Date().toISOString());
     }
     setLoading(false);
   }, []);

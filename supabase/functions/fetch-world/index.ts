@@ -50,7 +50,8 @@ Deno.serve(async (req) => {
     const urlOverrides: Record<string, string> = prefs?.source_url_overrides ?? {};
     const activeSources = sources
       .filter(s => !disabledSources.includes(s.name))
-      .map(s => ({ ...s, url: urlOverrides[s.name] ?? s.url }));
+      .map(s => ({ ...s, url: urlOverrides[s.name] ?? s.url }))
+      .slice(0, 8);
 
     // Step 1: Fetch RSS
     const allArticles = await fetchAllRSS(activeSources, supabase);
