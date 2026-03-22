@@ -49,16 +49,20 @@ Deno.serve(async (req) => {
     const articles = bySource.flat().slice(0, 5);
 
     for (const article of articles) {
-      (article as Record<string, unknown>).fingerprint = await extractFingerprint(
-        article.title, article.contentSnippet ?? '',
-      );
+      (article as Record<string, unknown>).fingerprint = article.title
+        .toLowerCase()
+        .replace(/[^a-z0-9\s]/g, '')
+        .split(/\s+/)
+        .slice(0, 6)
+        .join('-');
     }
 
     const { data: recents } = await supabase
       .from('articles')
       .select('story_fingerprint, category')
       .eq('category', 'ai-tech')
-      .gte('published_at', new Date(Date.now() - 48 * 3600 * 1000).toISOString());
+      .gte('published_at', new Date(Date.now() - 24 * 3600 * 1000).toISOString())
+      .limit(200);
 
     const recentFingerprints: Record<string, string[]> = {};
     for (const r of (recents ?? [])) {

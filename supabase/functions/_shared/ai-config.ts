@@ -7,15 +7,15 @@ export const MODEL_ASSIGNMENTS = {
   fingerprinting: 'llama-3.1-8b-instant',
   watchlistKeywordCheck: 'llama-3.1-8b-instant',
   stockTickerMatch: 'llama-3.1-8b-instant',
-  summarization: 'gemini-1.5-flash-latest',
+  summarization: 'gemini-2.0-flash',
   watchlistConfirmation: 'gemini-2.5-flash-preview-04-17',
   whyThisTooltip: 'gemini-2.5-flash-preview-04-17',
   embedding: 'text-embedding-004',
 } as const;
 
 export const FALLBACK_CHAIN: Record<string, string | null> = {
-  'gemini-2.5-flash-preview-04-17': 'gemini-1.5-flash-latest',
-  'gemini-1.5-flash-latest': null,
+  'gemini-2.5-flash-preview-04-17': 'gemini-2.0-flash',
+  'gemini-2.0-flash': null,
 };
 
 export const DEFAULT_PROMPTS = {

@@ -45,7 +45,7 @@ export async function fetchFeed(source: NewsSource): Promise<RSSItem[]> {
       source: source.name,
       category: source.category,
       enclosure: item.enclosure ? { url: item.enclosure.url } : undefined,
-    })).filter((item: any) => item.title && item.link);
+    })).filter((item: any) => item.title && item.link).slice(0, 10);
   } catch {
     return [];
   }
@@ -61,7 +61,8 @@ export async function fetchAllRSS(
   const { data: existingUrls } = await supabase
     .from('articles')
     .select('full_url')
-    .gte('created_at', new Date(Date.now() - 7 * 24 * 3600 * 1000).toISOString());
+    .gte('created_at', new Date(Date.now() - 24 * 3600 * 1000).toISOString())
+    .limit(500);
 
   const seenUrls = new Set((existingUrls ?? []).map((r: { full_url: string }) => r.full_url));
   const results: RSSItem[] = [];

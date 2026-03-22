@@ -25,7 +25,7 @@ export type WatchlistKeywordsResult = {
 
 async function generate(
   prompt: string,
-  primaryModel = 'gemini-1.5-flash-latest',
+  primaryModel = 'gemini-2.0-flash',
 ): Promise<string | null> {
   const chain: string[] = [primaryModel];
   let next = FALLBACK_CHAIN[primaryModel];

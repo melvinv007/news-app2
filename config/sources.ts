@@ -40,27 +40,31 @@ export const SOURCES: NewsSource[] = [
   { name: 'ABC News World', url: 'https://abcnews.go.com/abcnews/internationalheadlines', priority: 6, category: 'world', enabled: true },
 
   // ── INDIA ────────────────────────────────────────────────────────────────
-  { name: 'Times of India', url: 'https://timesofindia.indiatimes.com/rssfeeds/296589292.cms', priority: 9, category: 'india', enabled: true },
+  { name: 'Times of India', url: 'https://timesofindia.indiatimes.com/rssfeedstopstories.cms', priority: 9, category: 'india', enabled: true },
   { name: 'The Hindu', url: 'https://www.thehindu.com/feeder/default.rss', priority: 9, category: 'india', enabled: true },
-  { name: 'NDTV India', url: 'https://feeds.feedburner.com/NDTV-LatestNews', priority: 8, category: 'india', enabled: true },
+  { name: 'NDTV India', url: 'https://feeds.feedburner.com/ndtvnews-top-stories', priority: 8, category: 'india', enabled: true },
   { name: 'Indian Express', url: 'https://indianexpress.com/feed/', priority: 8, category: 'india', enabled: true },
+  { name: 'Hindustan Times', url: 'https://www.hindustantimes.com/feeds/rss/india-news/rssfeed.xml', priority: 7, category: 'india', enabled: true },
   { name: 'The Wire', url: 'https://thewire.in/rss', priority: 7, category: 'india', enabled: true },
   { name: 'BBC India', url: 'https://feeds.bbci.co.uk/news/world/asia/india/rss.xml', priority: 7, category: 'india', enabled: true },
-  { name: 'India Today', url: 'https://news.google.com/rss/search?q=when:24h+allinurl:indiatoday.in&ceid=IN:en&hl=en-IN&gl=IN', priority: 7, category: 'india', enabled: true },
+  { name: 'India Today', url: 'https://www.indiatoday.in/rss/home', priority: 7, category: 'india', enabled: true },
   { name: 'Tribune India', url: 'https://www.tribuneindia.com/rss/feed.aspx?cat=1', priority: 6, category: 'india', enabled: true },
+  { name: 'India News', url: 'https://news.google.com/rss/search?q=india+news&ceid=IN:en&hl=en-IN&gl=IN', priority: 7, category: 'india', enabled: true },
+  { name: 'India Today News', url: 'https://news.google.com/rss/search?q=india+today+news&ceid=IN:en&hl=en-IN&gl=IN', priority: 6, category: 'india', enabled: true },
 
   // ── MUMBAI ────────────────────────────────────────────────────────────────
-  { name: 'TOI Mumbai', url: 'https://timesofindia.indiatimes.com/rssfeeds/3908999.cms', priority: 8, category: 'mumbai', enabled: true },
+  { name: 'TOI Mumbai', url: 'https://timesofindia.indiatimes.com/rssfeeds/3908999.cms', priority: 8, category: 'mumbai', enabled: false },
   { name: 'Mumbai Live', url: 'https://news.google.com/rss/search?q=when:24h+mumbai&ceid=IN:en&hl=en-IN&gl=IN', priority: 7, category: 'mumbai', enabled: true },
-  { name: 'Mid-Day', url: 'https://www.mid-day.com/rss/mumbai-news.xml', priority: 6, category: 'mumbai', enabled: true },
+  { name: 'Mid-Day', url: 'https://www.mid-day.com/rss/mumbai-news.xml', priority: 6, category: 'mumbai', enabled: false },
   { name: 'Free Press India', url: 'https://news.google.com/rss/search?q=when:24h+mumbai+city&ceid=IN:en&hl=en-IN&gl=IN', priority: 6, category: 'mumbai', enabled: true },
-  { name: 'Mumbai News', url: 'https://news.google.com/rss/search?q=when:24h+mumbai+news&ceid=IN:en&hl=en-IN&gl=IN', priority: 7, category: 'mumbai', enabled: true },
+  { name: 'Mumbai News', url: 'https://news.google.com/rss/search?q=mumbai+news&ceid=IN:en&hl=en-IN&gl=IN', priority: 7, category: 'mumbai', enabled: true },
+  { name: 'Mumbai Times', url: 'https://news.google.com/rss/search?q=mumbai&ceid=IN:en&hl=en-IN&gl=IN', priority: 6, category: 'mumbai', enabled: true },
 
   // ── SPORTS — CRICKET ──────────────────────────────────────────────────────
   { name: 'ESPN Cricinfo', url: 'https://www.espncricinfo.com/rss/content/story/feeds/0.xml', priority: 9, category: 'sports-cricket', enabled: true },
   { name: 'BBC Cricket', url: 'https://feeds.bbci.co.uk/sport/cricket/rss.xml', priority: 8, category: 'sports-cricket', enabled: true },
   { name: 'Sky Sports Cricket', url: 'https://www.skysports.com/rss/12364', priority: 7, category: 'sports-cricket', enabled: true },
-  { name: 'Cricbuzz', url: 'https://news.google.com/rss/search?q=when:24h+allinurl:cricbuzz.com&ceid=IN:en&hl=en-IN&gl=IN', priority: 7, category: 'sports-cricket', enabled: true },
+  { name: 'Cricbuzz', url: 'https://www.cricbuzz.com/cricket-news/rss-feed', priority: 7, category: 'sports-cricket', enabled: true },
   { name: 'TOI Cricket', url: 'https://timesofindia.indiatimes.com/rssfeeds/4719148.cms', priority: 6, category: 'sports-cricket', enabled: true },
 
   // ── SPORTS — FOOTBALL ─────────────────────────────────────────────────────
@@ -69,14 +73,14 @@ export const SOURCES: NewsSource[] = [
   { name: 'The Guardian Football', url: 'https://www.theguardian.com/football/rss', priority: 7, category: 'sports-football', enabled: true },
   { name: 'GiveMeSport', url: 'https://www.givemesport.com/feed', priority: 7, category: 'sports-football', enabled: true },
   { name: 'The Independent Sport', url: 'https://www.independent.co.uk/sport/rss', priority: 6, category: 'sports-football', enabled: true },
-  { name: 'Goal.com', url: 'https://news.google.com/rss/search?q=when:24h+allinurl:goal.com+football&ceid=US:en&hl=en-US&gl=US', priority: 6, category: 'sports-football', enabled: true },
+  { name: 'Goal.com', url: 'https://www.goal.com/feeds/en/news', priority: 6, category: 'sports-football', enabled: true },
 
   // ── SPORTS — F1 ───────────────────────────────────────────────────────────
   { name: 'BBC F1', url: 'https://feeds.bbci.co.uk/sport/formula1/rss.xml', priority: 9, category: 'sports-f1', enabled: true },
   { name: 'Autosport F1', url: 'https://www.autosport.com/rss/f1/news/', priority: 8, category: 'sports-f1', enabled: true },
   { name: 'Sky Sports F1', url: 'https://www.skysports.com/rss/12174', priority: 8, category: 'sports-f1', enabled: true },
   { name: 'Motorsport.com', url: 'https://www.motorsport.com/rss/f1/news/', priority: 7, category: 'sports-f1', enabled: true },
-  { name: 'RaceFans', url: 'https://news.google.com/rss/search?q=when:24h+allinurl:racefans.net&ceid=US:en&hl=en-US&gl=US', priority: 7, category: 'sports-f1', enabled: true },
+  { name: 'RaceFans', url: 'https://www.racefans.net/feed/', priority: 7, category: 'sports-f1', enabled: true },
 
   // ── SPORTS — OTHERS ───────────────────────────────────────────────────────
   { name: 'BBC Sport', url: 'https://feeds.bbci.co.uk/sport/rss.xml', priority: 7, category: 'sports-other', enabled: true },

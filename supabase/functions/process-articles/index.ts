@@ -77,6 +77,37 @@ Deno.serve(async (req) => {
     // Step 3: Process each article
     for (const article of unprocessed) {
       try {
+        // Cross-section dedup via title similarity
+        const titleWords = article.title
+          .toLowerCase()
+          .replace(/[^a-z0-9\s]/g, '')
+          .split(/\s+/)
+          .filter((w: string) => w.length > 4)
+          .slice(0, 6)
+          .join(' & ');
+
+        if (titleWords.length > 0) {
+          const { data: crossDup } = await supabase
+            .from('articles')
+            .select('id, category')
+            .neq('category', article.category)
+            .eq('is_cluster_primary', true)
+            .eq('ai_processed', true)
+            .ilike('title', `%${titleWords.split(' & ')[0]}%`)
+            .gte('published_at', new Date(Date.now() - 24 * 3600 * 1000).toISOString())
+            .limit(1)
+            .maybeSingle();
+
+          if (crossDup) {
+            await supabase
+              .from('articles')
+              .update({ is_cluster_primary: false, ai_processed: true })
+              .eq('id', article.id);
+            processed++;
+            continue;
+          }
+        }
+
         // 3a: Extract full text
         const fullText = await extractArticle(article.full_url, supabase);
         const articleText = fullText ?? article.title;

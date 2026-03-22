@@ -51,28 +51,30 @@ Deno.serve(async (req) => {
     const activeSources = sources
       .filter(s => !disabledSources.includes(s.name))
       .map(s => ({ ...s, url: urlOverrides[s.name] ?? s.url }))
-      .slice(0, 8);
+      .slice(0, 4);
 
-    // Step 1: Fetch RSS
-    const allArticles = await fetchAllRSS(activeSources, supabase);
-    const bySource = activeSources.map(s =>
-      allArticles.filter(a => a.source === s.name).slice(0, 2)
-    );
-    const articles = bySource.flat().slice(0, 5);
+    // Step 1: Fetch RSS (shuffled sources for variety)
+    const articles = (await fetchAllRSS(
+      [...activeSources].sort(() => Math.random() - 0.5),
+      supabase
+    )).slice(0, 5);
 
     // Step 2: Fingerprint
     for (const article of articles) {
-      (article as Record<string, unknown>).fingerprint = await extractFingerprint(
-        article.title, article.contentSnippet ?? '',
-      );
+      (article as Record<string, unknown>).fingerprint = article.title
+        .toLowerCase()
+        .replace(/[^a-z0-9\s]/g, '')
+        .split(/\s+/)
+        .slice(0, 6)
+        .join('-');
     }
 
     // Step 3: Dedup
     const { data: recents } = await supabase
       .from('articles')
       .select('story_fingerprint, category')
-      .gte('published_at', new Date(Date.now() - 48 * 3600 * 1000).toISOString());
-
+      .gte('published_at', new Date(Date.now() - 24 * 3600 * 1000).toISOString())
+      .limit(200);
     const recentFingerprints: Record<string, string[]> = {};
     for (const r of (recents ?? [])) {
       if (!r.story_fingerprint) continue;
