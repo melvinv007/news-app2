@@ -24,7 +24,7 @@ import SectionHeader from '@/components/Layout/SectionHeader';
 import ReadingMode from '@/components/ReadingMode';
 
 const CATEGORY = 'ai-tech';
-const PAGE_SIZE = 20;
+const PAGE_SIZE = 30;
 
 export default function AiTechPage(): React.ReactElement {
   const [articles, setArticles] = useState<Article[]>([]);

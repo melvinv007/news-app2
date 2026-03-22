@@ -25,7 +25,7 @@ import SectionHeader from '@/components/Layout/SectionHeader';
 import ReadingMode from '@/components/ReadingMode';
 
 const CATEGORY = 'world';
-const PAGE_SIZE = 20;
+const PAGE_SIZE = 50;
 
 export default function WorldPage(): React.ReactElement {
   const [articles, setArticles] = useState<Article[]>([]);

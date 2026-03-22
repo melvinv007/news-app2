@@ -23,7 +23,7 @@ import SectionHeader from '@/components/Layout/SectionHeader';
 import ReadingMode from '@/components/ReadingMode';
 
 const CATEGORY = 'india';
-const PAGE_SIZE = 20;
+const PAGE_SIZE = 40;
 
 export default function IndiaPage(): React.ReactElement {
   const [articles, setArticles] = useState<Article[]>([]);

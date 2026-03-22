@@ -13,23 +13,23 @@ export type NewsSource = {
 
 export const SOURCES: NewsSource[] = [
   // WORLD
-  { name: 'BBC World',       url: 'https://feeds.bbci.co.uk/news/world/rss.xml',                        priority: 9, category: 'world',          enabled: true },
-  { name: 'Reuters',         url: 'https://news.google.com/rss/search?q=when:24h+allinurl:reuters.com&ceid=US:en&hl=en-US&gl=US', priority: 9, category: 'world', enabled: true },
-  { name: 'AP News',         url: 'https://news.google.com/rss/search?q=when:24h+allinurl:apnews.com&ceid=US:en&hl=en-US&gl=US', priority: 8, category: 'world', enabled: true },
+  { name: 'BBC World',       url: 'https://feeds.bbci.co.uk/news/rss.xml',                              priority: 9, category: 'world',          enabled: true },
+  { name: 'Reuters',         url: 'https://feeds.reuters.com/reuters/topNews',                          priority: 9, category: 'world',          enabled: true },
+  { name: 'AP News',         url: 'https://apnews.com/rss',                                             priority: 8, category: 'world',          enabled: true },
   { name: 'Al Jazeera',      url: 'https://www.aljazeera.com/xml/rss/all.xml',                           priority: 7, category: 'world',          enabled: true },
   { name: 'The Guardian',    url: 'https://www.theguardian.com/world/rss',                               priority: 7, category: 'world',          enabled: true },
-  { name: 'DW News',         url: 'https://rss.dw.com/rdf/rss-en-all',                                  priority: 6, category: 'world',          enabled: true },
+  { name: 'DW News',         url: 'https://rss.dw.com/xml/rss-en-all',                                  priority: 6, category: 'world',          enabled: true },
   // INDIA
-  { name: 'The Hindu',       url: 'https://www.thehindu.com/news/national/feeder/default.rss',           priority: 9, category: 'india',          enabled: true },
-  { name: 'NDTV',            url: 'https://feeds.feedburner.com/ndtvnews-india-news',                    priority: 8, category: 'india',          enabled: true },
-  { name: 'Indian Express',  url: 'https://indianexpress.com/section/india/feed/',                       priority: 8, category: 'india',          enabled: true },
-  { name: 'Hindustan Times', url: 'https://www.hindustantimes.com/rss/india/rssfeed.xml',                priority: 7, category: 'india',          enabled: true },
+  { name: 'The Hindu',       url: 'https://www.thehindu.com/feeder/default.rss',                        priority: 9, category: 'india',          enabled: true },
+  { name: 'NDTV',            url: 'https://feeds.feedburner.com/NDTV-LatestNews',                       priority: 8, category: 'india',          enabled: true },
+  { name: 'Indian Express',  url: 'https://indianexpress.com/feed/',                                    priority: 8, category: 'india',          enabled: true },
+  { name: 'Hindustan Times', url: 'https://www.hindustantimes.com/feeds/rss/india-news/rssfeed.xml',     priority: 7, category: 'india',          enabled: true },
   { name: 'The Wire',        url: 'https://thewire.in/rss/',                                             priority: 7, category: 'india',          enabled: true },
   { name: 'Scroll.in',       url: 'https://scroll.in/rss',                                              priority: 6, category: 'india',          enabled: true },
   // MUMBAI
-  { name: 'HT Mumbai',       url: 'https://www.hindustantimes.com/rss/mumbai/rssfeed.xml',               priority: 8, category: 'mumbai',         enabled: true },
+  { name: 'HT Mumbai',       url: 'https://www.hindustantimes.com/feeds/rss/mumbai-news/rssfeed.xml',    priority: 8, category: 'mumbai',         enabled: true },
   { name: 'TOI Mumbai',      url: 'https://timesofindia.indiatimes.com/rssfeeds/3908999.cms',            priority: 7, category: 'mumbai',         enabled: true },
-  { name: 'Mid-Day',         url: 'https://news.google.com/rss/search?q=when:24h+allinurl:mid-day.com&ceid=IN:en&hl=en-IN&gl=IN', priority: 6, category: 'mumbai', enabled: true },
+  { name: 'Mid-Day',         url: 'https://www.mid-day.com/rss/mumbai-news.xml',                        priority: 6, category: 'mumbai',         enabled: true },
   { name: 'Mumbai News',     url: 'https://news.google.com/rss/search?q=when:24h+mumbai+news&ceid=IN:en&hl=en-IN&gl=IN', priority: 7, category: 'mumbai', enabled: true },
   // SPORTS — CRICKET
   { name: 'ESPN Cricinfo',   url: 'https://www.espncricinfo.com/rss/content/story/feeds/0.xml',          priority: 9, category: 'sports-cricket', enabled: true },
@@ -41,7 +41,7 @@ export const SOURCES: NewsSource[] = [
   { name: 'Sky Sports Football', url: 'https://www.skysports.com/rss/12040',                            priority: 7, category: 'sports-football',enabled: true },
   { name: 'Bleacher Report', url: 'https://news.google.com/rss/search?q=when:24h+sports&ceid=US:en&hl=en-US&gl=US', priority: 6, category: 'sports-football', enabled: true },
   // SPORTS — F1
-  { name: 'Formula1.com',    url: 'https://news.google.com/rss/search?q=when:24h+formula+1+F1&ceid=US:en&hl=en-US&gl=US', priority: 9, category: 'sports-f1', enabled: true },
+  { name: 'Formula1.com',    url: 'https://www.formula1.com/content/fom-website/en/latest/all.rss',     priority: 9, category: 'sports-f1',      enabled: true },
   { name: 'Autosport F1',    url: 'https://www.autosport.com/rss/f1/news/',                             priority: 8, category: 'sports-f1',      enabled: true },
   { name: 'RaceFans',        url: 'https://www.racefans.net/feed/',                                     priority: 7, category: 'sports-f1',      enabled: true },
   { name: 'BBC F1',          url: 'https://feeds.bbci.co.uk/sport/formula1/rss.xml',                    priority: 7, category: 'sports-f1',      enabled: true },
@@ -63,15 +63,15 @@ export const SOURCES: NewsSource[] = [
   // BUSINESS
   { name: 'Mint',            url: 'https://www.livemint.com/rss/news',                                  priority: 8, category: 'business',       enabled: true },
   { name: 'Economic Times',  url: 'https://economictimes.indiatimes.com/rssfeedstopstories.cms',        priority: 8, category: 'business',       enabled: true },
-  { name: 'Forbes',          url: 'https://www.forbes.com/innovation/feed2',                            priority: 7, category: 'business',       enabled: true },
+  { name: 'Forbes',          url: 'https://www.forbes.com/business/feed/',                              priority: 7, category: 'business',       enabled: true },
   { name: 'Quartz',          url: 'https://qz.com/feed',                                               priority: 7, category: 'business',       enabled: true },
-  { name: 'CNBC Business',   url: 'https://www.cnbc.com/id/10001147/device/rss/rss.html',               priority: 7, category: 'business',       enabled: true },
+  { name: 'CNBC Business',   url: 'https://www.cnbc.com/id/100003114/device/rss/rss.html',              priority: 7, category: 'business',       enabled: true },
   // STOCKS — INDIA
   { name: 'ET Markets',      url: 'https://economictimes.indiatimes.com/markets/rssfeeds/1977021501.cms', priority: 8, category: 'stocks-india',  enabled: true },
   { name: 'Moneycontrol',    url: 'https://www.moneycontrol.com/rss/latestnews.xml',                   priority: 8, category: 'stocks-india',  enabled: true },
   { name: 'LiveMint Markets',url: 'https://www.livemint.com/rss/markets',                              priority: 7, category: 'stocks-india',  enabled: true },
   // STOCKS — US
-  { name: 'MarketWatch',     url: 'https://feeds.marketwatch.com/marketwatch/topstories',               priority: 8, category: 'stocks-us',     enabled: true },
+  { name: 'MarketWatch',     url: 'https://feeds.marketwatch.com/marketwatch/marketpulse/',             priority: 8, category: 'stocks-us',     enabled: true },
   { name: 'CNBC Markets',    url: 'https://www.cnbc.com/id/20910258/device/rss/rss.html',               priority: 8, category: 'stocks-us',     enabled: true },
   { name: 'Seeking Alpha',   url: 'https://seekingalpha.com/feed.xml',                                 priority: 7, category: 'stocks-us',     enabled: true },
 ];

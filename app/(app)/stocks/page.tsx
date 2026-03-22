@@ -23,7 +23,7 @@ import SectionHeader from '@/components/Layout/SectionHeader';
 import ReadingMode from '@/components/ReadingMode';
 import StocksWidget from '@/components/Stocks/StocksWidget';
 
-const PAGE_SIZE = 20;
+const PAGE_SIZE = 30;
 
 export default function StocksPage(): React.ReactElement {
   const [articles, setArticles] = useState<Article[]>([]);

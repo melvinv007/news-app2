@@ -29,21 +29,21 @@ export type NewsSource = {
 export const SOURCES: NewsSource[] = [
 
   // ── WORLD ────────────────────────────────────────────────────────────────
-  { name: 'BBC World', url: 'https://feeds.bbci.co.uk/news/world/rss.xml', priority: 9, category: 'world', enabled: true },
-  { name: 'Reuters', url: 'https://news.google.com/rss/search?q=when:24h+allinurl:reuters.com&ceid=US:en&hl=en-US&gl=US', priority: 9, category: 'world', enabled: true },
-  { name: 'AP News', url: 'https://news.google.com/rss/search?q=when:24h+allinurl:apnews.com&ceid=US:en&hl=en-US&gl=US', priority: 8, category: 'world', enabled: true },
+  { name: 'BBC World', url: 'https://feeds.bbci.co.uk/news/rss.xml', priority: 9, category: 'world', enabled: true },
+  { name: 'Reuters', url: 'https://feeds.reuters.com/reuters/topNews', priority: 9, category: 'world', enabled: true },
+  { name: 'AP News', url: 'https://apnews.com/rss', priority: 8, category: 'world', enabled: true },
   { name: 'Al Jazeera', url: 'https://www.aljazeera.com/xml/rss/all.xml', priority: 8, category: 'world', enabled: true },
   { name: 'The Guardian', url: 'https://www.theguardian.com/world/rss', priority: 7, category: 'world', enabled: true },
   { name: 'NPR World', url: 'https://feeds.npr.org/1004/rss.xml', priority: 7, category: 'world', enabled: true },
-  { name: 'DW News', url: 'https://rss.dw.com/rdf/rss-en-all', priority: 7, category: 'world', enabled: true },
+  { name: 'DW News', url: 'https://rss.dw.com/xml/rss-en-all', priority: 7, category: 'world', enabled: true },
   { name: 'France 24', url: 'https://www.france24.com/en/rss', priority: 6, category: 'world', enabled: true },
   { name: 'ABC News World', url: 'https://abcnews.go.com/abcnews/internationalheadlines', priority: 6, category: 'world', enabled: true },
 
   // ── INDIA ────────────────────────────────────────────────────────────────
   { name: 'Times of India', url: 'https://timesofindia.indiatimes.com/rssfeeds/296589292.cms', priority: 9, category: 'india', enabled: true },
-  { name: 'The Hindu', url: 'https://news.google.com/rss/search?q=when:24h+allinurl:thehindu.com&ceid=IN:en&hl=en-IN&gl=IN', priority: 9, category: 'india', enabled: true },
-  { name: 'NDTV India', url: 'https://news.google.com/rss/search?q=when:24h+allinurl:ndtv.com+india&ceid=IN:en&hl=en-IN&gl=IN', priority: 8, category: 'india', enabled: true },
-  { name: 'Indian Express', url: 'https://news.google.com/rss/search?q=when:24h+allinurl:indianexpress.com&ceid=IN:en&hl=en-IN&gl=IN', priority: 8, category: 'india', enabled: true },
+  { name: 'The Hindu', url: 'https://www.thehindu.com/feeder/default.rss', priority: 9, category: 'india', enabled: true },
+  { name: 'NDTV India', url: 'https://feeds.feedburner.com/NDTV-LatestNews', priority: 8, category: 'india', enabled: true },
+  { name: 'Indian Express', url: 'https://indianexpress.com/feed/', priority: 8, category: 'india', enabled: true },
   { name: 'The Wire', url: 'https://thewire.in/rss', priority: 7, category: 'india', enabled: true },
   { name: 'BBC India', url: 'https://feeds.bbci.co.uk/news/world/asia/india/rss.xml', priority: 7, category: 'india', enabled: true },
   { name: 'India Today', url: 'https://news.google.com/rss/search?q=when:24h+allinurl:indiatoday.in&ceid=IN:en&hl=en-IN&gl=IN', priority: 7, category: 'india', enabled: true },
@@ -52,7 +52,7 @@ export const SOURCES: NewsSource[] = [
   // ── MUMBAI ────────────────────────────────────────────────────────────────
   { name: 'TOI Mumbai', url: 'https://timesofindia.indiatimes.com/rssfeeds/3908999.cms', priority: 8, category: 'mumbai', enabled: true },
   { name: 'Mumbai Live', url: 'https://news.google.com/rss/search?q=when:24h+mumbai&ceid=IN:en&hl=en-IN&gl=IN', priority: 7, category: 'mumbai', enabled: true },
-  { name: 'Mid-Day', url: 'https://news.google.com/rss/search?q=when:24h+allinurl:mid-day.com&ceid=IN:en&hl=en-IN&gl=IN', priority: 6, category: 'mumbai', enabled: true },
+  { name: 'Mid-Day', url: 'https://www.mid-day.com/rss/mumbai-news.xml', priority: 6, category: 'mumbai', enabled: true },
   { name: 'Free Press India', url: 'https://news.google.com/rss/search?q=when:24h+mumbai+city&ceid=IN:en&hl=en-IN&gl=IN', priority: 6, category: 'mumbai', enabled: true },
   { name: 'Mumbai News', url: 'https://news.google.com/rss/search?q=when:24h+mumbai+news&ceid=IN:en&hl=en-IN&gl=IN', priority: 7, category: 'mumbai', enabled: true },
 
@@ -89,7 +89,7 @@ export const SOURCES: NewsSource[] = [
   { name: 'Ars Technica', url: 'https://feeds.arstechnica.com/arstechnica/index', priority: 8, category: 'ai-tech', enabled: true },
   { name: 'Wired', url: 'https://www.wired.com/feed/rss', priority: 8, category: 'ai-tech', enabled: true },
   { name: 'MIT Tech Review', url: 'https://www.technologyreview.com/feed/', priority: 8, category: 'ai-tech', enabled: true },
-  { name: 'VentureBeat AI', url: 'https://venturebeat.com/category/ai/feed/', priority: 8, category: 'ai-tech', enabled: true },
+  { name: 'VentureBeat AI', url: 'https://venturebeat.com/feed/', priority: 8, category: 'ai-tech', enabled: true },
   { name: 'OpenAI News', url: 'https://openai.com/news/rss.xml', priority: 9, category: 'ai-tech', enabled: true },
   { name: 'Anthropic Blog', url: 'https://www.anthropic.com/blog/rss.xml', priority: 9, category: 'ai-tech', enabled: true },
   { name: 'Google AI Blog', url: 'https://research.google/blog/rss', priority: 9, category: 'ai-tech', enabled: true },
@@ -103,8 +103,8 @@ export const SOURCES: NewsSource[] = [
   // ── BUSINESS ──────────────────────────────────────────────────────────────
   { name: 'Mint', url: 'https://www.livemint.com/rss/news', priority: 9, category: 'business', enabled: true },
   { name: 'Economic Times', url: 'https://economictimes.indiatimes.com/rssfeedstopstories.cms', priority: 8, category: 'business', enabled: true },
-  { name: 'CNBC Business', url: 'https://www.cnbc.com/id/10001147/device/rss/rss.html', priority: 8, category: 'business', enabled: true },
-  { name: 'Forbes', url: 'https://www.forbes.com/innovation/feed2', priority: 7, category: 'business', enabled: true },
+  { name: 'CNBC Business', url: 'https://www.cnbc.com/id/100003114/device/rss/rss.html', priority: 8, category: 'business', enabled: true },
+  { name: 'Forbes', url: 'https://www.forbes.com/business/feed/', priority: 7, category: 'business', enabled: true },
   { name: 'BBC Business', url: 'https://feeds.bbci.co.uk/news/business/rss.xml', priority: 7, category: 'business', enabled: true },
   { name: 'Guardian Business', url: 'https://www.theguardian.com/business/rss', priority: 7, category: 'business', enabled: true },
   { name: 'NPR Business', url: 'https://feeds.npr.org/1006/rss.xml', priority: 6, category: 'business', enabled: true },
@@ -117,7 +117,7 @@ export const SOURCES: NewsSource[] = [
   { name: 'BSE India', url: 'https://news.google.com/rss/search?q=when:24h+NSE+BSE+sensex+nifty&ceid=IN:en&hl=en-IN&gl=IN', priority: 7, category: 'stocks-india', enabled: true },
 
   // ── STOCKS — US ───────────────────────────────────────────────────────────
-  { name: 'MarketWatch', url: 'https://feeds.marketwatch.com/marketwatch/topstories', priority: 9, category: 'stocks-us', enabled: true },
+  { name: 'MarketWatch', url: 'https://feeds.marketwatch.com/marketwatch/marketpulse/', priority: 9, category: 'stocks-us', enabled: true },
   { name: 'CNBC Markets', url: 'https://www.cnbc.com/id/20910258/device/rss/rss.html', priority: 8, category: 'stocks-us', enabled: true },
   { name: 'Reuters Finance', url: 'https://news.google.com/rss/search?q=when:24h+allinurl:reuters.com+markets&ceid=US:en&hl=en-US&gl=US', priority: 8, category: 'stocks-us', enabled: true },
   { name: 'Seeking Alpha', url: 'https://seekingalpha.com/feed.xml', priority: 7, category: 'stocks-us', enabled: true },
