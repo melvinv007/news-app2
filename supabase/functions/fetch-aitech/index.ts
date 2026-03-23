@@ -42,13 +42,70 @@ Deno.serve(async (req) => {
       .map(s => ({ ...s, url: urlOverrides[s.name] ?? s.url }))
       .slice(0, 8);
 
-    const allArticles = await fetchAllRSS(activeSources, supabase);
-    const bySource = activeSources.map(s =>
-      allArticles.filter(a => a.source === s.name).slice(0, 2)
-    );
-    const articles = bySource.flat().slice(0, 5);
+    const rssArticles = await fetchAllRSS(activeSources, supabase);
+    const articles: any[] = [];
 
-    for (const article of articles) {
+    // Guardian API
+    try {
+      const guardianRes = await fetch(
+        `https://content.guardianapis.com/search?section=technology&show-fields=headline,trailText,webUrl&page-size=5&api-key=${Deno.env.get('GUARDIAN_API_KEY')}`
+      );
+      if (guardianRes.ok) {
+        const data = await guardianRes.json();
+        const results = data.response?.results || [];
+        for (const item of results) {
+          articles.push({
+            title: item.fields?.headline || item.webTitle,
+            link: item.webUrl,
+            contentSnippet: item.fields?.trailText ?? '',
+            pubDate: item.webPublicationDate,
+            source: 'The Guardian',
+            category: 'ai-tech'
+          });
+        }
+      } else {
+        await log.error('Guardian API error', { status: guardianRes.status });
+      }
+    } catch (e) {
+      await log.error('Guardian API exception', { error: String(e) });
+    }
+
+    // NYT API
+    try {
+      const nytRes = await fetch(
+        `https://api.nytimes.com/svc/topstories/v2/technology.json?api-key=${Deno.env.get('NYT_API_KEY')}`
+      );
+      if (nytRes.ok) {
+        const data = await nytRes.json();
+        const results = data.results || [];
+        for (const item of results) {
+          if (!item.title || !item.url) continue;
+          articles.push({
+            title: item.title,
+            link: item.url,
+            contentSnippet: item.abstract ?? '',
+            pubDate: item.published_date,
+            source: 'New York Times',
+            category: 'ai-tech'
+          });
+        }
+      } else {
+        await log.error('NYT API error', { status: nytRes.status });
+      }
+    } catch (e) {
+      await log.error('NYT API exception', { error: String(e) });
+    }
+
+    articles.push(...rssArticles);
+
+    // Deduplicate by URL
+    const uniqueMap = new Map();
+    for (const a of articles) {
+      if (!uniqueMap.has(a.link)) uniqueMap.set(a.link, a);
+    }
+    const finalArticles = Array.from(uniqueMap.values()).slice(0, 8);
+
+    for (const article of finalArticles) {
       (article as Record<string, unknown>).fingerprint = article.title
         .toLowerCase()
         .replace(/[^a-z0-9\s]/g, '')
@@ -72,7 +129,7 @@ Deno.serve(async (req) => {
     }
 
     const uniqueArticles = await filterDuplicates(
-      articles as Parameters<typeof filterDuplicates>[0],
+      finalArticles as Parameters<typeof filterDuplicates>[0],
       recentFingerprints,
       supabase,
     );

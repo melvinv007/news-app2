@@ -24,6 +24,8 @@ import { logger } from '../_shared/logger.ts';
 import { extractArticle } from '../_shared/extract.ts';
 import { summarizeArticle } from '../_shared/gemini.ts';
 import { matchStockTickers, summarizeWithGroq } from '../_shared/groq.ts';
+import { summarizeWithMistral } from '../_shared/mistral.ts';
+import { summarizeWithOpenRouter } from '../_shared/openrouter.ts';
 import { matchWatchlistItems } from '../_shared/watchlist-match.ts';
 
 import type { SummarizeResult } from '../_shared/gemini.ts';
@@ -112,7 +114,7 @@ Deno.serve(async (req) => {
         const fullText = await extractArticle(article.full_url, supabase);
         const articleText = fullText ?? article.title;
 
-        // 3b: Summarize — cascade: Gemini → Groq 70B → Groq 8B
+        // 3b: Summarize — cascade: Gemini → Mistral → OpenRouter → Groq 8B
         let aiResult: SummarizeResult | null = null;
 
         // Try Gemini first (unless quota already reached)
@@ -125,20 +127,29 @@ Deno.serve(async (req) => {
             );
           } catch (err) {
             if (err instanceof Error && err.message === 'QUOTA_EXCEEDED') {
-              await log.info('Gemini quota reached, falling back to Groq');
+              await log.info('Gemini quota reached, falling back to Mistral');
               geminiQuotaReached = true;
-              // Don't break — try Groq for this article
+              // Don't break — try Mistral for this article
             }
-            // Other errors: aiResult stays null, will fall through to Groq
+            // Other errors: aiResult stays null, will fall through
           }
         }
 
-        // Fallback to Groq 70B
+        // Fallback to Mistral
         if (!aiResult) {
-          aiResult = await summarizeWithGroq(
+          aiResult = await summarizeWithMistral(
             article.title,
             articleText,
-            'llama-3.3-70b-versatile',
+            customSummaryPrompt,
+          );
+        }
+
+        // Fallback to OpenRouter (DeepSeek V3)
+        if (!aiResult) {
+          aiResult = await summarizeWithOpenRouter(
+            article.title,
+            articleText,
+            customSummaryPrompt,
           );
         }
 
@@ -220,6 +231,20 @@ Deno.serve(async (req) => {
       total: unprocessed.length,
       quota_reached: geminiQuotaReached,
     });
+
+    // 7-day cleanup query
+    try {
+      const { error: cleanupError } = await supabase.rpc('cleanup_old_articles', { days_old: 7 });
+      if (cleanupError) {
+        // Fallback if RPC doesn't exist yet, we will log it
+        await log.error('Cleanup RPC failed (make sure to run migration)', { error: cleanupError.message });
+      } else {
+        await log.info('7-day cleanup completed');
+      }
+    } catch (e) {
+      await log.error('Cleanup RPC exception', { error: String(e) });
+    }
+
     return new Response(
       JSON.stringify({ ok: true, processed, quota_reached: geminiQuotaReached }),
       { status: 200 },

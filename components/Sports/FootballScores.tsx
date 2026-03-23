@@ -1,106 +1,87 @@
-/**
- * components/Sports/FootballScores.tsx
- * ─────────────────────────────────────────────────────────────────
- * Live and upcoming football scores widget.
- * Fetches via /api/football-scores proxy (keeps API key server-side).
- * Polls every 60 seconds during match hours for live updates.
- *
- * Matches filtered to next 7 days only.
- * Grouped by competition (Premier League / Champions League / etc).
- * Times displayed in IST (UTC+5:30).
- * Man City and Barcelona matches highlighted with amber border.
- *
- * Used by: app/(app)/sports/football/page.tsx
- */
-
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { Timer, Trophy, Calendar } from 'lucide-react';
+import { Trophy, RefreshCw, Loader2, AlertCircle } from 'lucide-react';
+import { createClient } from '@/lib/supabase/client';
 
-type Match = {
-  id: number;
-  homeTeam: string;
-  awayTeam: string;
-  homeScore: number | null;
-  awayScore: number | null;
-  status: string;
-  competition: string;
-  utcDate: string;
-  isHighlighted: boolean;
+type StandingRow = {
+  position: number;
+  team: { name: string; crest?: string; shortName?: string };
+  playedGames: number;
+  won: number;
+  draw: number;
+  lost: number;
+  points: number;
 };
 
-const POLL_INTERVAL = 60_000;
+type LeagueData = {
+  league_code: string;
+  league_name: string;
+  standings: { standings?: [{ table: StandingRow[] }] }; // structure varies, we'll traverse safely
+  updated_at: string;
+};
 
-/** Format UTC date to IST (UTC+5:30) */
-function formatMatchTimeIST(utcDate: string): string {
-  const date = new Date(utcDate);
-  const ist = new Date(date.getTime() + (5 * 60 + 30) * 60 * 1000);
-  const day = ist.getUTCDate();
-  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-  const month = months[ist.getUTCMonth()];
-  const hours = ist.getUTCHours().toString().padStart(2, '0');
-  const mins = ist.getUTCMinutes().toString().padStart(2, '0');
-  return `${day} ${month}, ${hours}:${mins} IST`;
-}
+const TABS = [
+  { code: 'PL', label: 'Premier League' },
+  { code: 'UCL', label: 'Champions League' },
+  { code: 'PD', label: 'La Liga' },
+  { code: 'BL1', label: 'Bundesliga' },
+  { code: 'SA', label: 'Serie A' },
+];
 
-/** Group matches by competition name */
-function groupByCompetition(matches: Match[]): Record<string, Match[]> {
-  const groups: Record<string, Match[]> = {};
-  for (const m of matches) {
-    const comp = m.competition || 'Other';
-    if (!groups[comp]) groups[comp] = [];
-    groups[comp].push(m);
-  }
-  return groups;
+function getTimeAgo(dateStr: string): string {
+  const diffMs = Date.now() - new Date(dateStr).getTime();
+  const mins = Math.max(0, Math.floor(diffMs / 60000));
+  if (mins < 60) return `${mins} min ago`;
+  const hours = Math.floor(mins / 60);
+  if (hours < 24) return `${hours} hr ago`;
+  return `${Math.floor(hours / 24)} days ago`;
 }
 
 export default function FootballScores(): React.ReactElement {
-  const [liveMatches, setLiveMatches] = useState<Match[]>([]);
-  const [upcomingMatches, setUpcomingMatches] = useState<Match[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
+  const [data, setData] = useState<LeagueData[]>([]);
+  const [activeTab, setActiveTab] = useState('PL');
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
 
-  const fetchMatches = useCallback(async (): Promise<void> => {
-    try {
-      const [liveRes, upcomingRes] = await Promise.all([
-        fetch('/api/football-scores?type=live'),
-        fetch('/api/football-scores?type=upcoming'),
-      ]);
+  const fetchStandings = useCallback(async () => {
+    const supabase = createClient();
+    const { data: fetchedData, error } = await supabase
+      .from('football_standings')
+      .select('*')
+      .order('updated_at', { ascending: false });
 
-      if (liveRes.ok) {
-        const data = (await liveRes.json()) as { live: Match[] };
-        setLiveMatches(data.live ?? []);
-      }
-
-      if (upcomingRes.ok) {
-        const data = (await upcomingRes.json()) as { upcoming: Match[] };
-        setUpcomingMatches(data.upcoming ?? []);
-      }
-    } catch {
-      // Graceful degrade
-    } finally {
-      setLoading(false);
+    if (!error && fetchedData) {
+      setData(fetchedData as LeagueData[]);
     }
+    setLoading(false);
   }, []);
 
   useEffect(() => {
-    fetchMatches();
-    const interval = setInterval(fetchMatches, POLL_INTERVAL);
-    return () => clearInterval(interval);
-  }, [fetchMatches]);
+    fetchStandings();
+  }, [fetchStandings]);
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    try {
+      await fetch('/api/refresh-football', { method: 'POST' });
+      await fetchStandings();
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setRefreshing(false);
+    }
+  };
 
   if (loading) {
     return (
-      <div
-        className="rounded-xl p-4 md:p-5"
-        style={{ backgroundColor: 'var(--bg-secondary)' }}
-      >
+      <div className="rounded-xl p-4 md:p-5" style={{ backgroundColor: 'var(--bg-secondary)' }}>
         <div className="flex items-center gap-2 mb-3">
           <div className="w-4 h-4 rounded shimmer" />
           <div className="h-3 w-32 rounded shimmer" />
         </div>
         <div className="space-y-2">
-          {Array.from({ length: 3 }).map((_, i) => (
+          {Array.from({ length: 5 }).map((_, i) => (
             <div key={i} className="h-10 rounded-lg shimmer" />
           ))}
         </div>
@@ -108,138 +89,119 @@ export default function FootballScores(): React.ReactElement {
     );
   }
 
-  const liveGrouped = groupByCompetition(liveMatches);
-  const upcomingGrouped = groupByCompetition(upcomingMatches);
-
-  return (
-    <div
-      className="rounded-xl p-4 md:p-5"
-      style={{ backgroundColor: 'var(--bg-secondary)' }}
-    >
-      {/* Live matches — grouped by competition */}
-      {liveMatches.length > 0 && (
-        <div className="mb-4">
-          <div className="flex items-center gap-2 mb-3">
-            <Timer size={14} style={{ color: 'var(--error)' }} />
-            <span
-              className="font-sans text-xs font-semibold uppercase tracking-wider"
-              style={{ color: 'var(--error)' }}
-            >
-              Live
-            </span>
-          </div>
-          {Object.entries(liveGrouped).map(([comp, matches]) => (
-            <div key={comp} className="mb-3 last:mb-0">
-              <p
-                className="font-sans text-[11px] font-semibold uppercase tracking-wider mb-1.5 px-1"
-                style={{ color: 'var(--text-muted)' }}
-              >
-                {comp}
-              </p>
-              <div className="space-y-1.5">
-                {matches.map((match) => (
-                  <div
-                    key={match.id}
-                    className="flex items-center justify-between px-3 py-2 rounded-lg"
-                    style={{
-                      backgroundColor: 'var(--bg-tertiary)',
-                      ...(match.isHighlighted
-                        ? { borderLeft: '3px solid var(--accent)' }
-                        : {}),
-                    }}
-                  >
-                    <span
-                      className="font-sans text-sm"
-                      style={{
-                        color: 'var(--text-primary)',
-                        fontWeight: match.isHighlighted ? 600 : 400,
-                      }}
-                    >
-                      {match.homeTeam}
-                    </span>
-                    <span className="font-mono text-sm font-bold" style={{ color: 'var(--accent)' }}>
-                      {match.homeScore ?? 0} – {match.awayScore ?? 0}
-                    </span>
-                    <span
-                      className="font-sans text-sm text-right"
-                      style={{
-                        color: 'var(--text-primary)',
-                        fontWeight: match.isHighlighted ? 600 : 400,
-                      }}
-                    >
-                      {match.awayTeam}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {/* Upcoming matches — grouped by competition, times in IST */}
-      <div>
+  if (data.length === 0) {
+    return (
+      <div className="rounded-xl p-4 md:p-5" style={{ backgroundColor: 'var(--bg-secondary)' }}>
         <div className="flex items-center gap-2 mb-3">
-          <Calendar size={14} style={{ color: 'var(--text-muted)' }} />
-          <span
-            className="font-sans text-xs font-semibold uppercase tracking-wider"
-            style={{ color: 'var(--text-muted)' }}
-          >
-            Upcoming (Next 7 days)
+          <Trophy size={16} className="text-[var(--accent)]" />
+          <span className="font-sans text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)]">
+            Football Standings
           </span>
         </div>
-        {upcomingMatches.length === 0 && liveMatches.length === 0 ? (
-          <div className="flex items-center gap-2 py-4 justify-center">
-            <Trophy size={16} style={{ color: 'var(--text-muted)' }} />
-            <span className="font-sans text-sm" style={{ color: 'var(--text-muted)' }}>
-              No upcoming matches this week
+        <div className="flex items-center gap-2 py-4 justify-center text-[var(--text-muted)]">
+          <AlertCircle size={16} />
+          <span className="font-sans text-sm">Standings unavailable</span>
+        </div>
+      </div>
+    );
+  }
+
+  const activeLeague = data.find(d => d.league_code === activeTab);
+  
+  // Safely extract the table array based on common football-data.org structure
+  let table: StandingRow[] = [];
+  if (activeLeague?.standings) {
+    const s = activeLeague.standings as any;
+    if (Array.isArray(s)) table = s;
+    else if (s.standings && Array.isArray(s.standings) && s.standings[0]?.table) {
+      table = s.standings[0].table;
+    } else if (s.table && Array.isArray(s.table)) {
+      table = s.table;
+    } else if (s.response && Array.isArray(s.response) && s.response[0]?.league?.standings) {
+      table = s.response[0].league.standings[0];
+    }
+  }
+
+  return (
+    <div className="rounded-xl overflow-hidden flex flex-col pt-4 md:pt-5" style={{ backgroundColor: 'var(--bg-secondary)' }}>
+      {/* Header */}
+      <div className="flex items-center justify-between px-4 md:px-5 mb-3">
+        <div className="flex items-center gap-2">
+          <Trophy size={16} style={{ color: 'var(--accent)' }} />
+          <span className="font-sans text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>
+            Football Standings
+          </span>
+        </div>
+        <div className="flex items-center gap-3">
+          {activeLeague && (
+            <span className="font-mono text-xs text-[var(--text-muted)] hidden md:inline-block">
+              Last updated: {getTimeAgo(activeLeague.updated_at)}
             </span>
-          </div>
-        ) : (
-          Object.entries(upcomingGrouped).map(([comp, matches]) => (
-            <div key={comp} className="mb-3 last:mb-0">
-              <p
-                className="font-sans text-[11px] font-semibold uppercase tracking-wider mb-1.5 px-1"
-                style={{ color: 'var(--text-muted)' }}
-              >
-                {comp}
-              </p>
-              <div className="space-y-1.5">
-                {matches.map((match) => (
-                  <div
-                    key={match.id}
-                    className="flex items-center justify-between px-3 py-2 rounded-lg"
-                    style={{
-                      backgroundColor: 'var(--bg-primary)',
-                      ...(match.isHighlighted
-                        ? { borderLeft: '3px solid var(--accent)' }
-                        : {}),
-                    }}
-                  >
-                    <span
-                      className="font-sans text-sm"
-                      style={{
-                        color: 'var(--text-secondary)',
-                        fontWeight: match.isHighlighted ? 600 : 400,
-                      }}
-                    >
-                      {match.homeTeam} vs {match.awayTeam}
-                    </span>
-                    <span className="font-sans text-xs" style={{ color: 'var(--text-muted)' }}>
-                      {formatMatchTimeIST(match.utcDate)}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          ))
-        )}
+          )}
+          <button 
+            onClick={handleRefresh} 
+            disabled={refreshing}
+            className="p-1.5 rounded-md transition-colors hover:bg-[var(--bg-tertiary)] disabled:opacity-50"
+          >
+            {refreshing ? <Loader2 size={16} className="animate-spin text-[var(--text-muted)]" /> : <RefreshCw size={16} className="text-[var(--text-muted)]" />}
+          </button>
+        </div>
       </div>
 
-      {/* Note */}
-      <p className="font-sans text-xs mt-3" style={{ color: 'var(--text-muted)' }}>
-        PL · CL · Serie A · Bundesliga · Ligue 1 · ISL
-      </p>
+      {/* Tabs */}
+      <div className="flex overflow-x-auto hide-scrollbar px-2 mb-2 border-b border-[var(--border)]">
+        {TABS.map(tab => (
+          <button
+            key={tab.code}
+            onClick={() => setActiveTab(tab.code)}
+            className="px-3 py-2 whitespace-nowrap text-sm font-medium transition-colors border-b-2"
+            style={{
+              color: activeTab === tab.code ? 'var(--accent)' : 'var(--text-muted)',
+              borderColor: activeTab === tab.code ? 'var(--accent)' : 'transparent',
+            }}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Standings Table */}
+      <div className="overflow-x-auto pb-4 px-4 md:px-5">
+        <table className="w-full text-sm text-left whitespace-nowrap">
+          <thead>
+            <tr className="text-[10px] uppercase font-semibold text-[var(--text-muted)] border-b border-[var(--border)]">
+              <th className="py-2 pl-2 pr-4 font-mono font-medium tracking-wider">Pos</th>
+              <th className="py-2 pr-4 tracking-wider">Team</th>
+              <th className="py-2 px-2 text-center tracking-wider">P</th>
+              <th className="py-2 px-2 text-center tracking-wider text-emerald-500/80">W</th>
+              <th className="py-2 px-2 text-center tracking-wider text-amber-500/80">D</th>
+              <th className="py-2 px-2 text-center tracking-wider text-red-500/80">L</th>
+              <th className="py-2 pl-2 pr-2 text-right tracking-wider">Pts</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-[var(--border)]/50">
+            {table && table.length > 0 ? table.map((row) => (
+              <tr key={row.team?.name || row.position} className="hover:bg-[var(--bg-tertiary)]/50 transition-colors">
+                <td className="py-2.5 pl-2 pr-4 font-mono text-xs text-[var(--text-secondary)]">{row.position}</td>
+                <td className="py-2.5 pr-4 font-semibold text-[var(--text-primary)] max-w-[150px] truncate">
+                  {row.team?.shortName || row.team?.name || 'Unknown'}
+                </td>
+                <td className="py-2.5 px-2 text-center text-xs text-[var(--text-muted)]">{row.playedGames ?? 0}</td>
+                <td className="py-2.5 px-2 text-center text-xs text-[var(--text-muted)]">{row.won ?? 0}</td>
+                <td className="py-2.5 px-2 text-center text-xs text-[var(--text-muted)]">{row.draw ?? 0}</td>
+                <td className="py-2.5 px-2 text-center text-xs text-[var(--text-muted)]">{row.lost ?? 0}</td>
+                <td className="py-2.5 pl-2 pr-2 text-right font-bold text-[var(--accent)]">{row.points ?? 0}</td>
+              </tr>
+            )) : (
+              <tr>
+                <td colSpan={7} className="py-6 text-center text-[var(--text-muted)] text-sm">
+                  No data available for this league.
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }

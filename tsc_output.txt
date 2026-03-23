@@ -1,0 +1,3 @@
+components/Settings/ArticleCountSettings.tsx(51,52): error TS2345: Argument of type '{ section_article_counts: { world: number; india: number; mumbai: number; 'ai-tech': number; business: number; 'sports-cricket': number; 'sports-football': number; 'sports-f1': number; 'sports-other': number; stocks: number; }; }' is not assignable to parameter of type 'never'.
+components/Settings/NotificationSettings.tsx(34,52): error TS2345: Argument of type '{ notification_settings: { breaking_news: boolean; f1_race_start: boolean; daily_digest: boolean; watchlist_updates: boolean; }; }' is not assignable to parameter of type 'never'.
+components/Settings/ThemeSwitcher.tsx(23,52): error TS2345: Argument of type '{ theme: string; }' is not assignable to parameter of type 'never'.

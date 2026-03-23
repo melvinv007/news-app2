@@ -13,6 +13,8 @@
 
 import type { Metadata, Viewport } from 'next';
 import { Lora, Bricolage_Grotesque, DM_Sans, JetBrains_Mono } from 'next/font/google';
+import { cookies } from 'next/headers';
+import { createServerClient } from '@supabase/ssr';
 import './globals.css';
 
 const lora = Lora({
@@ -63,17 +65,33 @@ export const viewport: Viewport = {
   themeColor: '#1c1917',
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  let theme = 'stone-dark';
+  
+  try {
+    const cookieStore = cookies();
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      { cookies: { get(name: string) { return cookieStore.get(name)?.value; } } }
+    );
+    const { data } = await supabase.from('user_preferences').select('theme').eq('id', 1).single();
+    if (data?.theme) theme = data.theme;
+  } catch (e) {
+    // defaults to stone-dark on error or at build time
+  }
+
   return (
     <html
       lang="en"
+      data-theme={theme}
       className={`${lora.variable} ${bricolage.variable} ${dmSans.variable} ${jetBrains.variable}`}
     >
-      <body className="bg-[#1c1917] text-[#fafaf9] antialiased">
+      <body className="antialiased">
         {children}
       </body>
     </html>

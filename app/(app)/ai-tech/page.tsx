@@ -24,10 +24,12 @@ import SectionHeader from '@/components/Layout/SectionHeader';
 import ReadingMode from '@/components/ReadingMode';
 
 const CATEGORY = 'ai-tech';
-const PAGE_SIZE = 30;
+const PAGE_SIZE = 50;
 
 export default function AiTechPage(): React.ReactElement {
   const [articles, setArticles] = useState<Article[]>([]);
+  const [offset, setOffset] = useState(0);
+  const [hasMore, setHasMore] = useState(true);
   const [loading, setLoading] = useState<boolean>(true);
   const [selectedArticle, setSelectedArticle] = useState<Article | null>(null);
   const [lastUpdated, setLastUpdated] = useState<string | null>(null);
@@ -41,15 +43,17 @@ export default function AiTechPage(): React.ReactElement {
       .eq('is_cluster_primary', true)
       .eq('ai_processed', true)
       .order('published_at', { ascending: false })
-      .limit(PAGE_SIZE);
+      .range(offset, offset + PAGE_SIZE - 1);
     if (error) {
       console.error('[AI/Tech] Fetch error:', error.message);
     } else if (data) {
-      setArticles(data);
+      if (data.length < PAGE_SIZE) setHasMore(false);
+      if (offset === 0) setArticles(data);
+      else setArticles(prev => [...prev, ...data]);
       setLastUpdated(new Date().toISOString());
     }
     setLoading(false);
-  }, []);
+  }, [offset]);
 
   useEffect(() => {
     fetchArticles();
@@ -81,11 +85,11 @@ export default function AiTechPage(): React.ReactElement {
 
   const handleOpenReadingMode = useCallback((article: Article): void => {
     setSelectedArticle(article);
-  }, []);
+  }, [offset]);
 
   const handleCloseReadingMode = useCallback((): void => {
     setSelectedArticle(null);
-  }, []);
+  }, [offset]);
 
   return (
     <>
@@ -94,11 +98,20 @@ export default function AiTechPage(): React.ReactElement {
         subtitle="Updated every 10 minutes"
         lastUpdated={lastUpdated}
       />
-      <ArticleGrid
+      <ArticleGrid 
         articles={articles}
         loading={loading}
         onOpenReadingMode={handleOpenReadingMode}
       />
+      {hasMore && (
+        <button
+          onClick={() => setOffset(prev => prev + 50)}
+          className="mx-auto mt-8 px-6 py-3 rounded-lg font-sans text-sm font-medium transition-colors block"
+          style={{ backgroundColor: 'var(--bg-tertiary)', color: 'var(--text-primary)' }}
+        >
+          Load more
+        </button>
+      )}
       <ReadingMode
         article={selectedArticle}
         onClose={handleCloseReadingMode}

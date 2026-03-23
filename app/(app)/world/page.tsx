@@ -29,6 +29,8 @@ const PAGE_SIZE = 50;
 
 export default function WorldPage(): React.ReactElement {
   const [articles, setArticles] = useState<Article[]>([]);
+  const [offset, setOffset] = useState(0);
+  const [hasMore, setHasMore] = useState(true);
   const [loading, setLoading] = useState<boolean>(true);
   const [selectedArticle, setSelectedArticle] = useState<Article | null>(null);
   const [lastUpdated, setLastUpdated] = useState<string | null>(null);
@@ -40,17 +42,19 @@ export default function WorldPage(): React.ReactElement {
     // so we use a type assertion for the params and cast the result.
     const { data, error } = await (supabase.rpc as CallableFunction)(
       'get_recommended_articles',
-      { p_category: CATEGORY, p_limit: PAGE_SIZE },
+      { p_category: CATEGORY, p_limit: PAGE_SIZE, p_offset: offset },
     ) as { data: Article[] | null; error: { message: string } | null };
 
     if (error) {
       console.error('[World] Fetch error:', error.message);
     } else if (data) {
-      setArticles(data as Article[]);
+      if (data.length < PAGE_SIZE) setHasMore(false);
+      if (offset === 0) setArticles(data as Article[]);
+      else setArticles(prev => [...prev, ...data as Article[]]);
       setLastUpdated(new Date().toISOString());
     }
     setLoading(false);
-  }, []);
+  }, [offset]);
 
   // Initial fetch + Realtime subscription
   useEffect(() => {
@@ -83,11 +87,11 @@ export default function WorldPage(): React.ReactElement {
 
   const handleOpenReadingMode = useCallback((article: Article): void => {
     setSelectedArticle(article);
-  }, []);
+  }, [offset]);
 
   const handleCloseReadingMode = useCallback((): void => {
     setSelectedArticle(null);
-  }, []);
+  }, [offset]);
 
   return (
     <>
@@ -96,11 +100,20 @@ export default function WorldPage(): React.ReactElement {
         subtitle="Personalised for you"
         lastUpdated={lastUpdated}
       />
-      <ArticleGrid
+      <ArticleGrid 
         articles={articles}
         loading={loading}
         onOpenReadingMode={handleOpenReadingMode}
       />
+      {hasMore && (
+        <button
+          onClick={() => setOffset(prev => prev + 50)}
+          className="mx-auto mt-8 px-6 py-3 rounded-lg font-sans text-sm font-medium transition-colors block"
+          style={{ backgroundColor: 'var(--bg-tertiary)', color: 'var(--text-primary)' }}
+        >
+          Load more
+        </button>
+      )}
       <ReadingMode
         article={selectedArticle}
         onClose={handleCloseReadingMode}

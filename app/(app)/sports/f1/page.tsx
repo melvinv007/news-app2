@@ -25,10 +25,12 @@ import F1Calendar from '@/components/Sports/F1Calendar';
 import F1Standings from '@/components/Sports/F1Standings';
 
 const CATEGORY = 'sports-f1';
-const PAGE_SIZE = 20;
+const PAGE_SIZE = 50;
 
 export default function F1Page(): React.ReactElement {
   const [articles, setArticles] = useState<Article[]>([]);
+  const [offset, setOffset] = useState(0);
+  const [hasMore, setHasMore] = useState(true);
   const [loading, setLoading] = useState<boolean>(true);
   const [selectedArticle, setSelectedArticle] = useState<Article | null>(null);
   const [lastUpdated, setLastUpdated] = useState<string | null>(null);
@@ -42,16 +44,18 @@ export default function F1Page(): React.ReactElement {
       .eq('is_cluster_primary', true)
       .eq('ai_processed', true)
       .order('published_at', { ascending: false })
-      .limit(PAGE_SIZE);
+      .range(offset, offset + PAGE_SIZE - 1);
 
     if (error) {
       console.error('[F1] Fetch error:', error.message);
     } else if (data) {
-      setArticles(data);
+      if (data.length < PAGE_SIZE) setHasMore(false);
+      if (offset === 0) setArticles(data);
+      else setArticles(prev => [...prev, ...data]);
       setLastUpdated(new Date().toISOString());
     }
     setLoading(false);
-  }, []);
+  }, [offset]);
 
   useEffect(() => {
     fetchArticles();

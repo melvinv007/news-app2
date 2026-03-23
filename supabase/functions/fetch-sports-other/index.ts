@@ -24,11 +24,11 @@ Deno.serve(async (req) => {
     Deno.env.get('SUPABASE_URL')!,
     Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
   );
-  const log = logger(supabase, 'fetch-sports');
-  await log.info('Fetch-sports started');
+  const log = logger(supabase, 'fetch-sports-other');
+  await log.info('Fetch-sports-other started');
 
   try {
-    const sportCategories = ['sports-cricket', 'sports-football', 'sports-f1', 'sports-other'];
+    const sportCategories = ['sports-other'];
     const sources = SOURCES.filter(s => sportCategories.includes(s.category) && s.enabled);
 
     const { data: prefs } = await supabase
@@ -104,11 +104,11 @@ Deno.serve(async (req) => {
       if (!error) inserted++;
     }
 
-    await log.info('Fetch-sports completed', { inserted });
+    await log.info('Fetch-sports-other completed', { inserted });
     return new Response(JSON.stringify({ ok: true, inserted }), { status: 200 });
 
   } catch (err) {
-    await log.error('Fetch-sports failed', { error: String(err) });
+    await log.error('Fetch-sports-other failed', { error: String(err) });
     return new Response(JSON.stringify({ ok: false }), { status: 500 });
   }
 });

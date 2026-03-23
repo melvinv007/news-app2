@@ -10,61 +10,36 @@ Deno.serve(async (req) => {
     Deno.env.get('SUPABASE_URL')!,
     Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
   );
-  const log = logger(supabase, 'fetch-world');
+  const log = logger(supabase, 'fetch-mumbai');
 
   try {
-    await log.info('Starting world fetch');
+    await log.info('Starting mumbai fetch');
     const articles: any[] = [];
 
-    // Guardian API
+    // GNews API
     try {
-      const guardianRes = await fetch(
-        `https://content.guardianapis.com/search?section=world&show-fields=headline,trailText,webUrl&page-size=10&api-key=${Deno.env.get('GUARDIAN_API_KEY')}`
+      const res = await fetch(
+        `https://gnews.io/api/v4/search?q=mumbai&lang=en&country=in&max=5&token=${Deno.env.get('GNEWS_API_KEY')}`
       );
-      if (guardianRes.ok) {
-        const data = await guardianRes.json();
-        const results = data.response?.results || [];
-        for (const item of results) {
-          articles.push({
-            title: item.fields?.headline || item.webTitle,
-            link: item.webUrl,
-            contentSnippet: item.fields?.trailText ?? '',
-            pubDate: item.webPublicationDate,
-            source: 'The Guardian',
-            category: 'world'
-          });
-        }
-      } else {
-        await log.error('Guardian API error', { status: guardianRes.status });
-      }
-    } catch (e) {
-      await log.error('Guardian API exception', { error: String(e) });
-    }
-
-    // NYT API
-    try {
-      const nytRes = await fetch(
-        `https://api.nytimes.com/svc/topstories/v2/world.json?api-key=${Deno.env.get('NYT_API_KEY')}`
-      );
-      if (nytRes.ok) {
-        const data = await nytRes.json();
-        const results = data.results || [];
+      if (res.ok) {
+        const data = await res.json();
+        const results = data.articles || [];
         for (const item of results) {
           if (!item.title || !item.url) continue;
           articles.push({
             title: item.title,
             link: item.url,
-            contentSnippet: item.abstract ?? '',
-            pubDate: item.published_date,
-            source: 'New York Times',
-            category: 'world'
+            contentSnippet: item.description ?? '',
+            pubDate: item.publishedAt,
+            source: item.source?.name,
+            category: 'mumbai'
           });
         }
       } else {
-        await log.error('NYT API error', { status: nytRes.status });
+        await log.error('GNews API error', { status: res.status });
       }
     } catch (e) {
-      await log.error('NYT API exception', { error: String(e) });
+      await log.error('GNews API exception', { error: String(e) });
     }
 
     // Deduplicate by URL
@@ -72,7 +47,7 @@ Deno.serve(async (req) => {
     for (const a of articles) {
       if (!uniqueMap.has(a.link)) uniqueMap.set(a.link, a);
     }
-    const uniqueArticles = Array.from(uniqueMap.values()).slice(0, 8);
+    const uniqueArticles = Array.from(uniqueMap.values()).slice(0, 5);
 
     await log.info(`Found ${uniqueArticles.length} unique articles`);
 
@@ -104,10 +79,10 @@ Deno.serve(async (req) => {
       }
     }
 
-    await log.info(`World fetch completed`, { inserted });
+    await log.info(`Mumbai fetch completed`, { inserted });
     return new Response(JSON.stringify({ ok: true, inserted }), { status: 200 });
   } catch (error) {
-    await log.error('World fetch failed', { error: String(error) });
+    await log.error('Mumbai fetch failed', { error: String(error) });
     return new Response(JSON.stringify({ ok: false }), { status: 500 });
   }
 });
