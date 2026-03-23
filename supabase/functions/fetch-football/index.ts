@@ -21,7 +21,7 @@ Deno.serve(async (req) => {
     let standingsUpdated = 0;
     const leagues = [
       { code: 'PL', name: 'Premier League' },
-      { code: 'UCL', name: 'Champions League' },
+      { code: 'CL', name: 'Champions League' },
       { code: 'PD', name: 'La Liga' },
       { code: 'BL1', name: 'Bundesliga' },
       { code: 'SA', name: 'Serie A' },
@@ -29,13 +29,32 @@ Deno.serve(async (req) => {
     
     for (const league of leagues) {
       try {
-        const res = await fetch(`https://football-standings-api.vercel.app/standings/${league.code}`);
+        const res = await fetch(
+          `https://api.football-data.org/v4/competitions/${league.code}/standings`,
+          { headers: { 'X-Auth-Token': Deno.env.get('FOOTBALL_DATA_API_KEY') ?? '' } }
+        );
         if (res.ok) {
           const data = await res.json();
+          const rawStandings = data.standings?.[0]?.table ?? [];
+          
+          await log.info(`Sample standing row ${league.code}`, { sample: rawStandings[0] });
+          
+          const mappedStandings = rawStandings.map((row: any) => ({
+            position: row.position,
+            team: row.team?.name ?? 'Unknown',
+            played: row.playedGames,
+            won: row.won,
+            drawn: row.draw,
+            lost: row.lost,
+            points: row.points,
+            goalsFor: row.goalsFor,
+            goalsAgainst: row.goalsAgainst,
+          }));
+
           await supabase.from('football_standings').upsert({
             league_code: league.code,
             league_name: league.name,
-            standings: data,
+            standings: mappedStandings,
             updated_at: new Date().toISOString()
           }, { onConflict: 'league_code' });
           standingsUpdated++;
@@ -84,7 +103,7 @@ Deno.serve(async (req) => {
           category: 'sports-football',
           published_at: article.pubDate || new Date().toISOString(),
           ai_processed: false,
-          fingerprint: fingerprint,
+          story_fingerprint: fingerprint,
           content_fetched: false
         });
         inserted++;

@@ -72,7 +72,7 @@ Deno.serve(async (req) => {
           category: article.category,
           published_at: article.pubDate || new Date().toISOString(),
           ai_processed: false,
-          fingerprint: fingerprint,
+          story_fingerprint: fingerprint,
           content_fetched: false
         });
         inserted++;

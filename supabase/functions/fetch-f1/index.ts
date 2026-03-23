@@ -94,7 +94,7 @@ Deno.serve(async (req) => {
           category: 'sports-f1',
           published_at: article.pubDate || new Date().toISOString(),
           ai_processed: false,
-          fingerprint: fingerprint,
+          story_fingerprint: fingerprint,
           content_fetched: false
         });
         inserted++;

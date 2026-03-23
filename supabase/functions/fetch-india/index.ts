@@ -64,18 +64,25 @@ Deno.serve(async (req) => {
       const isDuplicate = recents?.some(r => r.link === article.link);
       
       if (!isDuplicate) {
-        await supabase.from('articles').insert({
+        const insertPayload = {
           title: article.title,
           url: article.link,
           full_url: article.link,
           source: article.source,
           category: article.category,
-          published_at: article.pubDate || new Date().toISOString(),
+          published_at: String(article.pubDate || new Date().toISOString()),
           ai_processed: false,
-          fingerprint: fingerprint,
+          story_fingerprint: fingerprint,
           content_fetched: false
-        });
-        inserted++;
+        };
+        const { error: insertErr } = await supabase.from('articles').insert(insertPayload);
+        
+        if (insertErr) {
+           await log.error('Failed to insert article', { title: article.title, error: insertErr });
+        } else {
+           await log.info('Inserted article', { category: article.category, source: article.source });
+           inserted++;
+        }
       }
     }
 
