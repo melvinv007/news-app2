@@ -6,7 +6,12 @@
 import Groq from 'https://esm.sh/groq-sdk@0.13.0';
 import { DEFAULT_PROMPTS } from './ai-config.ts';
 
-const groq = new Groq({ apiKey: Deno.env.get('GROQ_API_KEY') ?? '' });
+// Validate API key at module load
+const groqKey = Deno.env.get('GROQ_API_KEY');
+if (!groqKey) {
+  console.error('[GROQ] GROQ_API_KEY not set - Groq functions will fail');
+}
+const groq = new Groq({ apiKey: groqKey ?? 'dummy-key-for-init' });
 const MODEL = 'llama-3.1-8b-instant';
 
 async function complete(

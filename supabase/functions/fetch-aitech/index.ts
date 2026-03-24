@@ -12,7 +12,6 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { logger } from '../_shared/logger.ts';
 import { fetchAllRSS } from '../_shared/rss.ts';
 import { filterDuplicates } from '../_shared/dedup.ts';
-import { extractFingerprint } from '../_shared/groq.ts';
 import { SOURCES } from '../_shared/sources.ts';
 
 Deno.serve(async (req) => {
@@ -43,12 +42,13 @@ Deno.serve(async (req) => {
       .slice(0, 8);
 
     const rssArticles = await fetchAllRSS(activeSources, supabase);
+    const yesterday = new Date(Date.now() - 24 * 3600 * 1000).toISOString().split('T')[0];
     const articles: any[] = [];
 
     // Guardian API
     try {
       const guardianRes = await fetch(
-        `https://content.guardianapis.com/search?section=technology&show-fields=headline,trailText,webUrl&page-size=5&api-key=${Deno.env.get('GUARDIAN_API_KEY')}`
+        `https://content.guardianapis.com/search?section=technology&show-fields=headline,trailText,webUrl&page-size=5&from-date=${yesterday}&api-key=${Deno.env.get('GUARDIAN_API_KEY')}`
       );
       if (guardianRes.ok) {
         const data = await guardianRes.json();
@@ -59,7 +59,7 @@ Deno.serve(async (req) => {
             link: item.webUrl,
             contentSnippet: item.fields?.trailText ?? '',
             pubDate: item.webPublicationDate,
-            source: 'The Guardian',
+            source_name: 'The Guardian',
             category: 'ai-tech'
           });
         }
@@ -85,7 +85,7 @@ Deno.serve(async (req) => {
             link: item.url,
             contentSnippet: item.abstract ?? '',
             pubDate: item.published_date,
-            source: 'New York Times',
+            source_name: 'New York Times',
             category: 'ai-tech'
           });
         }
@@ -118,7 +118,7 @@ Deno.serve(async (req) => {
       .from('articles')
       .select('story_fingerprint, category')
       .eq('category', 'ai-tech')
-      .gte('published_at', new Date(Date.now() - 24 * 3600 * 1000).toISOString())
+      .gte('published_at', new Date(Date.now() - 48 * 3600 * 1000).toISOString())
       .limit(200);
 
     const recentFingerprints: Record<string, string[]> = {};
@@ -142,7 +142,7 @@ Deno.serve(async (req) => {
         summary: null,
         full_content: null,
         full_url: article.link,
-        source_name: article.source,
+        source_name: article.source_name,
         source_priority: activeSources.find(s => s.name === article.source)?.priority ?? 5,
         category: 'ai-tech',
         topic_tags: null,

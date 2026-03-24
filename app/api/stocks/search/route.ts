@@ -22,8 +22,14 @@ export async function GET(req: Request) {
   if (!q) return NextResponse.json({ results: [] });
 
   if (market === 'US') {
+    const apiKey = process.env.FINNHUB_API_KEY;
+    if (!apiKey) {
+      console.error('[STOCKS SEARCH] FINNHUB_API_KEY not set');
+      return NextResponse.json({ results: [], error: 'API key not configured' });
+    }
+
     try {
-      const res = await fetch(`https://finnhub.io/api/v1/search?q=${q}&token=${process.env.FINNHUB_API_KEY}`);
+      const res = await fetch(`https://finnhub.io/api/v1/search?q=${q}&token=${apiKey}`);
       if (res.ok) {
         const data = await res.json();
         const results = (data.result || []).slice(0, 10).map((r: any) => ({

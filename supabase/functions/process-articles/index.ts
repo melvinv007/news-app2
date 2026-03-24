@@ -50,7 +50,7 @@ Deno.serve(async (req) => {
       .eq('ai_processed', false)
       .eq('is_null_article', false)
       .order('created_at', { ascending: true })
-      .limit(4);
+      .limit(15);
 
     if (!unprocessed || unprocessed.length === 0) {
       await log.info('Process-articles: no unprocessed articles');
@@ -74,7 +74,6 @@ Deno.serve(async (req) => {
     const customSummaryPrompt = prefs?.custom_summary_prompt ?? null;
 
     let processed = 0;
-    let geminiQuotaReached = false;
 
     // Step 3: Process each article
     for (const article of unprocessed) {
@@ -117,22 +116,15 @@ Deno.serve(async (req) => {
         // 3b: Summarize — cascade: Gemini → Mistral → OpenRouter → Groq 8B
         let aiResult: SummarizeResult | null = null;
 
-        // Try Gemini first (unless quota already reached)
-        if (!geminiQuotaReached) {
-          try {
-            aiResult = await summarizeArticle(
-              article.title,
-              articleText,
-              customSummaryPrompt,
-            );
-          } catch (err) {
-            if (err instanceof Error && err.message === 'QUOTA_EXCEEDED') {
-              await log.info('Gemini quota reached, falling back to Mistral');
-              geminiQuotaReached = true;
-              // Don't break — try Mistral for this article
-            }
-            // Other errors: aiResult stays null, will fall through
-          }
+        // Try Gemini first
+        try {
+          aiResult = await summarizeArticle(
+            article.title,
+            articleText,
+            customSummaryPrompt,
+          );
+        } catch (err) {
+          await log.info('Gemini failed, falling back to Mistral', { error: String(err) });
         }
 
         // Fallback to Mistral
@@ -169,7 +161,6 @@ Deno.serve(async (req) => {
             .update({
               ai_processed: true,
               is_null_article: true,
-              processing_error: 'all_models_failed',
             })
             .eq('id', article.id);
           processed++;
@@ -219,7 +210,6 @@ Deno.serve(async (req) => {
           .from('articles')
           .update({
             ai_processed: true,
-            processing_error: String(err).slice(0, 500),
           })
           .eq('id', article.id);
         processed++;
@@ -229,7 +219,6 @@ Deno.serve(async (req) => {
     await log.info('Process-articles completed', {
       processed,
       total: unprocessed.length,
-      quota_reached: geminiQuotaReached,
     });
 
     // 7-day cleanup query
@@ -246,7 +235,7 @@ Deno.serve(async (req) => {
     }
 
     return new Response(
-      JSON.stringify({ ok: true, processed, quota_reached: geminiQuotaReached }),
+      JSON.stringify({ ok: true, processed }),
       { status: 200 },
     );
 

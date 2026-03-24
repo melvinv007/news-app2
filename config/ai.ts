@@ -12,16 +12,16 @@ export const MODEL_ASSIGNMENTS = {
   fingerprinting:        'llama-3.1-8b-instant', // Groq — every article
   watchlistKeywordCheck: 'llama-3.1-8b-instant', // Groq — every article × watchlist items
   stockTickerMatch:      'llama-3.1-8b-instant', // Groq — every article
-  summarization:         'gemini-2.5-flash',      // Gemini — new stories only
-  watchlistConfirmation: 'gemini-2.5-flash',      // Gemini — on keyword match
-  whyThisTooltip:        'gemini-2.5-flash',      // Gemini — on hover, cached
+  summarization:         'gemini-2.0-flash-lite', // Gemini — new stories only (valid model)
+  watchlistConfirmation: 'gemini-2.0-flash-lite', // Gemini — on keyword match
+  whyThisTooltip:        'gemini-2.0-flash-lite', // Gemini — on hover, cached
   embedding:             'text-embedding-004',    // Gemini — 768-dim vectors
 } as const;
 
 // Fallback chain: if primary fails (quota/error), try next.
 // null = graceful degrade (article shows without summary, retried next cycle)
 export const FALLBACK_CHAIN: Record<string, string | null> = {
-  'gemini-2.5-flash': 'gemini-1.5-flash',
+  'gemini-2.0-flash-lite': 'gemini-1.5-flash',
   'gemini-1.5-flash': null,
 };
 

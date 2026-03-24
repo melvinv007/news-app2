@@ -14,12 +14,13 @@ Deno.serve(async (req) => {
 
   try {
     await log.info('Starting world fetch');
+    const yesterday = new Date(Date.now() - 24*3600*1000).toISOString().split('T')[0];
     const articles: any[] = [];
 
     // Guardian API
     try {
       const guardianRes = await fetch(
-        `https://content.guardianapis.com/search?section=world&show-fields=headline,trailText,webUrl&page-size=10&api-key=${Deno.env.get('GUARDIAN_API_KEY')}`
+        `https://content.guardianapis.com/search?section=world&show-fields=headline,trailText,webUrl&page-size=10&from-date=${yesterday}&api-key=${Deno.env.get('GUARDIAN_API_KEY')}`
       );
       if (guardianRes.ok) {
         const data = await guardianRes.json();
@@ -30,7 +31,7 @@ Deno.serve(async (req) => {
             link: item.webUrl,
             contentSnippet: item.fields?.trailText ?? '',
             pubDate: item.webPublicationDate,
-            source: 'The Guardian',
+            source_name: 'The Guardian',
             category: 'world'
           });
         }
@@ -56,7 +57,7 @@ Deno.serve(async (req) => {
             link: item.url,
             contentSnippet: item.abstract ?? '',
             pubDate: item.published_date,
-            source: 'New York Times',
+            source_name: 'New York Times',
             category: 'world'
           });
         }
@@ -82,18 +83,17 @@ Deno.serve(async (req) => {
       
       const { data: recents } = await supabase
         .from('articles')
-        .select('id, link')
-        .gte('published_at', new Date(Date.now() - 24 * 3600 * 1000).toISOString())
+        .select('id, full_url')
+        .gte('published_at', new Date(Date.now() - 48 * 3600 * 1000).toISOString())
         .limit(200);
 
-      const isDuplicate = recents?.some(r => r.link === article.link);
+      const isDuplicate = recents?.some(r => r.full_url === article.link);
       
       if (!isDuplicate) {
         await supabase.from('articles').insert({
           title: article.title,
-          url: article.link,
           full_url: article.link,
-          source: article.source,
+          source_name: article.source_name,
           category: article.category,
           published_at: article.pubDate || new Date().toISOString(),
           ai_processed: false,

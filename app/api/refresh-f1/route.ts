@@ -4,12 +4,18 @@ export const dynamic = 'force-dynamic';
 
 export async function POST() {
   try {
+    const cronSecret = process.env.CRON_SECRET;
+    if (!cronSecret) {
+      console.error('[REFRESH-F1] CRON_SECRET not configured');
+      return NextResponse.json({ error: 'CRON_SECRET not configured' }, { status: 500 });
+    }
+
     const res = await fetch(
       `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/fetch-f1`,
       { 
         method: 'POST', 
         headers: { 
-          'x-cron-secret': process.env.CRON_SECRET! 
+          'x-cron-secret': cronSecret
         } 
       }
     );

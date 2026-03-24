@@ -6,7 +6,12 @@
 import { GoogleGenerativeAI } from 'https://esm.sh/@google/generative-ai@0.21.0';
 import { DEFAULT_PROMPTS, FALLBACK_CHAIN } from './ai-config.ts';
 
-const genAI = new GoogleGenerativeAI(Deno.env.get('GEMINI_API_KEY') ?? '');
+// Validate API key at module load
+const geminiKey = Deno.env.get('GEMINI_API_KEY');
+if (!geminiKey) {
+  console.error('[GEMINI] GEMINI_API_KEY not set - AI functions will fail');
+}
+const genAI = new GoogleGenerativeAI(geminiKey ?? 'dummy-key-for-init');
 
 export type SummarizeResult = {
   summary: string | null;

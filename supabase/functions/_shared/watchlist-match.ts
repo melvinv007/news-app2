@@ -59,9 +59,18 @@ export async function matchWatchlistItems(
     if (confirmed) {
       confirmedIds.push(id);
 
+      // Fetch current unread_count and increment
+      const { data: current } = await supabase
+        .from('user_watchlist')
+        .select('unread_count')
+        .eq('id', id)
+        .single();
+
+      const newCount = (current?.unread_count ?? 0) + 1;
+
       await supabase
         .from('user_watchlist')
-        .update({ unread_count: supabase.rpc('increment', { x: 1 }) as unknown as number })
+        .update({ unread_count: newCount })
         .eq('id', id);
     }
   }

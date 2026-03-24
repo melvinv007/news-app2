@@ -65,18 +65,18 @@ Deno.serve(async (req) => {
       
       const { data: recents } = await supabase
         .from('articles')
-        .select('id, link')
+        .select('id, full_url')
         .gte('published_at', new Date(Date.now() - 24 * 3600 * 1000).toISOString())
         .limit(200);
 
-      const isDuplicate = recents?.some(r => r.link === article.link);
+      const isDuplicate = recents?.some(r => r.full_url === article.link);
       
       if (!isDuplicate) {
         await supabase.from('articles').insert({
           title: article.title,
           url: article.link,
           full_url: article.link,
-          source: article.source,
+          source_name: article.source,
           category: article.category,
           published_at: article.pubDate || new Date().toISOString(),
           ai_processed: false,

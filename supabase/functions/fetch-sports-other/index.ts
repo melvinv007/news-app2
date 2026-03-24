@@ -12,7 +12,6 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { logger } from '../_shared/logger.ts';
 import { fetchAllRSS } from '../_shared/rss.ts';
 import { filterDuplicates } from '../_shared/dedup.ts';
-import { extractFingerprint } from '../_shared/groq.ts';
 import { SOURCES } from '../_shared/sources.ts';
 
 Deno.serve(async (req) => {

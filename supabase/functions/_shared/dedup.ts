@@ -43,10 +43,19 @@ export async function updateCluster(
   existingArticleId: string,
   newSource: { name: string; url: string },
 ): Promise<void> {
+  // Fetch current source_count
+  const { data: current } = await supabase
+    .from('articles')
+    .select('source_count')
+    .eq('id', existingArticleId)
+    .single();
+
+  const newCount = (current?.source_count ?? 1) + 1;
+
   await supabase
     .from('articles')
     .update({
-      source_count: supabase.rpc('increment', { x: 1 }) as unknown as number,
+      source_count: newCount,
       has_update: true,
       last_activity_at: new Date().toISOString(),
     })

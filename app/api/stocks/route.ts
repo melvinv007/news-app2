@@ -15,9 +15,15 @@ export async function GET(req: Request) {
   const quotes: Record<string, any> = {};
 
   if (market === 'US') {
+    const apiKey = process.env.FINNHUB_API_KEY;
+    if (!apiKey) {
+      console.error('[STOCKS API] FINNHUB_API_KEY not set');
+      return NextResponse.json({ quotes: {}, error: 'API key not configured' });
+    }
+
     const promises = tickers.map(async (t) => {
       try {
-        const res = await fetch(`https://finnhub.io/api/v1/quote?symbol=${t}&token=${process.env.FINNHUB_API_KEY}`);
+        const res = await fetch(`https://finnhub.io/api/v1/quote?symbol=${t}&token=${apiKey}`);
         if (res.ok) {
           const data = await res.json();
           if (data && data.c !== 0) {
