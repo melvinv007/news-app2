@@ -25,7 +25,7 @@ type LeagueData = {
 
 const TABS = [
   { code: 'PL', label: 'Premier League' },
-  { code: 'UCL', label: 'Champions League' },
+  { code: 'CL', label: 'Champions League' },
   { code: 'PD', label: 'La Liga' },
   { code: 'BL1', label: 'Bundesliga' },
   { code: 'SA', label: 'Serie A' },
@@ -188,7 +188,7 @@ export default function FootballScores(): React.ReactElement {
           </thead>
           <tbody className="divide-y divide-[var(--border)]/50">
             {table && table.length > 0 ? table.map((row) => (
-              <tr key={row.team?.name || row.position} className="hover:bg-[var(--bg-tertiary)]/50 transition-colors">
+              <tr key={`${getTeamName(row.team)}-${row.position}`} className="hover:bg-[var(--bg-tertiary)]/50 transition-colors">
                 <td className="py-2.5 pl-2 pr-4 font-mono text-xs text-[var(--text-secondary)]">{row.position}</td>
                 <td className="py-2.5 pr-4 font-semibold text-[var(--text-primary)] max-w-[150px] truncate">
                   {getTeamName(row.team)}
