@@ -39,9 +39,15 @@ type SectionStatus = {
 
 const SECTIONS = [
   { name: 'World',    fetchKey: 'fetch-world' },
-  { name: 'Sports',   fetchKey: 'fetch-sports' },
+  { name: 'India',    fetchKey: 'fetch-india' },
+  { name: 'Mumbai',   fetchKey: 'fetch-mumbai' },
+  { name: 'Cricket',  fetchKey: 'fetch-cricket' },
+  { name: 'Football', fetchKey: 'fetch-football' },
+  { name: 'F1',       fetchKey: 'fetch-f1' },
+  { name: 'Sports',   fetchKey: 'fetch-sports-other' },
   { name: 'AI/Tech',  fetchKey: 'fetch-aitech' },
   { name: 'Business', fetchKey: 'fetch-business' },
+  { name: 'AI Process', fetchKey: 'process-articles' },
 ];
 
 function getStaleness(lastFetch: Date | null): 'fresh' | 'stale' | 'critical' {
@@ -119,14 +125,12 @@ export default function HealthDashboard(): React.ReactElement {
   const handleRunFetcher = async (fetchKey: string): Promise<void> => {
     setRunningFetcher(fetchKey);
     try {
-      const baseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? '';
-      const fnUrl = `${baseUrl}/functions/v1/${fetchKey}`;
-      await fetch(fnUrl, {
+      await fetch('/api/refresh-fetcher', {
         method: 'POST',
         headers: {
-          'x-cron-secret': 'manual-trigger',
           'Content-Type': 'application/json',
         },
+        body: JSON.stringify({ fetchKey }),
       });
     } catch {
       // Best-effort trigger

@@ -49,7 +49,7 @@ type MatchResult = {
 };
 
 async function apiFetch(path: string): Promise<APIFixture[]> {
-  const apiKey = process.env.FOOTBALL_API_KEY;
+  const apiKey = process.env.FOOTBALL_API_KEY ?? process.env.FOOTBALL_DATA_API_KEY;
   if (!apiKey) return [];
 
   const res = await fetch(`${API_BASE}${path}`, {

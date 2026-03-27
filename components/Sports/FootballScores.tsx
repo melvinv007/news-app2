@@ -6,10 +6,12 @@ import { createClient } from '@/lib/supabase/client';
 
 type StandingRow = {
   position: number;
-  team: { name: string; crest?: string; shortName?: string };
-  playedGames: number;
+  team: { name?: string; crest?: string; shortName?: string } | string;
+  playedGames?: number;
+  played?: number;
   won: number;
-  draw: number;
+  draw?: number;
+  drawn?: number;
   lost: number;
   points: number;
 };
@@ -36,6 +38,11 @@ function getTimeAgo(dateStr: string): string {
   const hours = Math.floor(mins / 60);
   if (hours < 24) return `${hours} hr ago`;
   return `${Math.floor(hours / 24)} days ago`;
+}
+
+function getTeamName(team: StandingRow['team']): string {
+  if (typeof team === 'string') return team;
+  return team?.shortName || team?.name || 'Unknown';
 }
 
 export default function FootballScores(): React.ReactElement {
@@ -184,11 +191,11 @@ export default function FootballScores(): React.ReactElement {
               <tr key={row.team?.name || row.position} className="hover:bg-[var(--bg-tertiary)]/50 transition-colors">
                 <td className="py-2.5 pl-2 pr-4 font-mono text-xs text-[var(--text-secondary)]">{row.position}</td>
                 <td className="py-2.5 pr-4 font-semibold text-[var(--text-primary)] max-w-[150px] truncate">
-                  {row.team?.shortName || row.team?.name || 'Unknown'}
+                  {getTeamName(row.team)}
                 </td>
-                <td className="py-2.5 px-2 text-center text-xs text-[var(--text-muted)]">{row.playedGames ?? 0}</td>
+                <td className="py-2.5 px-2 text-center text-xs text-[var(--text-muted)]">{row.playedGames ?? row.played ?? 0}</td>
                 <td className="py-2.5 px-2 text-center text-xs text-[var(--text-muted)]">{row.won ?? 0}</td>
-                <td className="py-2.5 px-2 text-center text-xs text-[var(--text-muted)]">{row.draw ?? 0}</td>
+                <td className="py-2.5 px-2 text-center text-xs text-[var(--text-muted)]">{row.draw ?? row.drawn ?? 0}</td>
                 <td className="py-2.5 px-2 text-center text-xs text-[var(--text-muted)]">{row.lost ?? 0}</td>
                 <td className="py-2.5 pl-2 pr-2 text-right font-bold text-[var(--accent)]">{row.points ?? 0}</td>
               </tr>

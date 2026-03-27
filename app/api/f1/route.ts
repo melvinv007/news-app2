@@ -142,8 +142,9 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
           const driver = driverMap.get(driverNum);
           return {
             position,
-            driverName: driver?.full_name ?? driver?.name_acronym ?? `#${driverNum}`,
-            teamName: driver?.team_name ?? '',
+            driver: driver?.full_name ?? driver?.name_acronym ?? `#${driverNum}`,
+            team: driver?.team_name ?? '',
+            points: null as number | null,
             driverNumber: driverNum,
           };
         })

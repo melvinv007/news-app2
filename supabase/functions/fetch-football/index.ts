@@ -35,20 +35,23 @@ Deno.serve(async (req) => {
         );
         if (res.ok) {
           const data = await res.json();
-          const rawStandings = data.standings?.[0]?.table ?? [];
+          const standingsBlocks = Array.isArray(data.standings) ? data.standings : [];
+          // Competitions like UCL can return multiple group tables; flatten all.
+          const rawStandings = standingsBlocks
+            .flatMap((block: { table?: unknown[] }) => Array.isArray(block?.table) ? block.table : []);
           
           await log.info(`Sample standing row ${league.code}`, { sample: rawStandings[0] });
           
           const mappedStandings = rawStandings.map((row: any) => ({
-            position: row.position,
+            position: row.position ?? 0,
             team: row.team?.name ?? 'Unknown',
-            played: row.playedGames,
-            won: row.won,
-            drawn: row.draw,
-            lost: row.lost,
-            points: row.points,
-            goalsFor: row.goalsFor,
-            goalsAgainst: row.goalsAgainst,
+            played: row.playedGames ?? 0,
+            won: row.won ?? 0,
+            drawn: row.draw ?? 0,
+            lost: row.lost ?? 0,
+            points: row.points ?? 0,
+            goalsFor: row.goalsFor ?? 0,
+            goalsAgainst: row.goalsAgainst ?? 0,
           }));
 
           await supabase.from('football_standings').upsert({

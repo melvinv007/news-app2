@@ -21,7 +21,7 @@ type DriverStanding = {
   position: number;
   driver: string;
   team: string;
-  points: number;
+  points: number | null;
 };
 
 export default function F1Standings(): React.ReactElement {
@@ -123,7 +123,7 @@ export default function F1Standings(): React.ReactElement {
                     className="font-mono text-sm text-right font-bold"
                     style={{ color: isP1 ? 'var(--accent)' : 'var(--text-secondary)' }}
                   >
-                    {d.points}
+                    {d.points ?? '-'}
                   </span>
                 </div>
               );
